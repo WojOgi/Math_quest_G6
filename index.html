@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Quest — IB Grade 6</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+:root {
+  --bg-deep: #0b0e2b;
+  --bg-card: rgba(20, 25, 65, 0.85);
+  --bg-card-solid: #141941;
+  --accent-cyan: #00e5ff;
+  --accent-magenta: #ff2d95;
+  --accent-gold: #ffd740;
+  --accent-green: #00e676;
+  --accent-orange: #ff9100;
+  --text-primary: #e8eaf6;
+  --text-muted: #9fa8da;
+  --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.4);
+  --glow-magenta: 0 0 20px rgba(255, 45, 149, 0.4);
+  --glow-gold: 0 0 20px rgba(255, 215, 64, 0.4);
+  --radius: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Starfield background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(0,229,255,0.7), transparent),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 90% 80%, rgba(255,45,149,0.5), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 80% 15%, rgba(255,215,64,0.5), transparent),
+    radial-gradient(1px 1px at 45% 55%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 65% 85%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 15% 45%, rgba(0,229,255,0.4), transparent);
+  background-size: 200px 200px, 300px 300px, 250px 250px, 180px 180px, 350px 350px,
+                   280px 280px, 320px 320px, 220px 220px, 270px 270px, 190px 190px;
+  animation: twinkle 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* SCREENS */
+.screen { display: none; flex-direction: column; align-items: center; animation: fadeIn 0.4s ease; }
+.screen.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+@keyframes correctPulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6); }
+  70% { box-shadow: 0 0 0 15px rgba(0, 230, 118, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* TITLE */
+h1.game-title {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta), var(--accent-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 20px rgba(0,229,255,0.3));
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 32px;
+  font-weight: 500;
+}
+
+/* PLANET DECORATION */
+.planet-deco {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin: 20px auto;
+  position: relative;
+  background: radial-gradient(circle at 35% 35%, #7c4dff, #311b92);
+  box-shadow: 0 0 40px rgba(124, 77, 255, 0.4), inset -8px -8px 20px rgba(0,0,0,0.3);
+}
+.planet-deco::after {
+  content: '';
+  position: absolute;
+  width: 160px;
+  height: 20px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3), rgba(255,45,149,0.3), transparent);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotateX(75deg);
+}
+
+/* INPUT + BUTTON STYLES */
+input[type="text"], input[type="number"] {
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 14px 20px;
+  color: var(--text-primary);
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.3s;
+  width: 100%;
+  max-width: 360px;
+}
+input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+.btn {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 14px 36px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  position: relative;
+  overflow: hidden;
+}
+.btn:active { transform: scale(0.96); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan), #0091ea);
+  color: #0b0e2b;
+  box-shadow: var(--glow-cyan);
+}
+.btn-primary:hover { box-shadow: 0 0 30px rgba(0, 229, 255, 0.6); transform: translateY(-2px); }
+
+.btn-magenta {
+  background: linear-gradient(135deg, var(--accent-magenta), #c51162);
+  color: #fff;
+  box-shadow: var(--glow-magenta);
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+  color: #0b0e2b;
+  box-shadow: var(--glow-gold);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+.btn-outline:hover { background: rgba(0,229,255,0.1); }
+
+.btn-sm { padding: 10px 24px; font-size: 0.85rem; }
+
+/* CATEGORY GRID */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.category-card {
+  background: var(--bg-card);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.category-card:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-4px);
+  box-shadow: var(--glow-cyan);
+}
+.category-card.selected {
+  border-color: var(--accent-gold);
+  box-shadow: var(--glow-gold);
+}
+
+.cat-icon {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  display: block;
+}
+.cat-name {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.cat-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.cat-progress {
+  margin-top: 10px;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cat-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-gold));
+  border-radius: 2px;
+  transition: width 0.5s;
+}
+
+/* LEVEL SELECTOR */
+.level-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.level-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid rgba(255,255,255,0.15);
+  color: var(--text-primary);
+  font-family: 'Bangers', cursive;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+.level-btn:hover { border-color: var(--accent-cyan); transform: scale(1.1); }
+.level-btn.completed {
+  border-color: var(--accent-green);
+  background: rgba(0, 230, 118, 0.15);
+}
+.level-btn.completed::after {
+  content: '✓';
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 0.7rem;
+  background: var(--accent-green);
+  color: #0b0e2b;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 700;
+}
+.level-btn.locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* GAME SCREEN */
+.game-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.game-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.game-stat .icon { font-size: 1.2rem; }
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.question-card {
+  background: var(--bg-card);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  padding: 36px 28px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.4s ease;
+  position: relative;
+}
+.question-card.correct-flash {
+  animation: correctPulse 0.6s ease;
+  border-color: var(--accent-green);
+}
+.question-card.wrong-flash {
+  animation: shake 0.5s ease;
+  border-color: var(--accent-magenta);
+}
+
+.question-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.question-text {
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  font-weight: 700;
+  margin-bottom: 28px;
+  line-height: 1.5;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.question-text .frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 4px;
+  position: relative;
+  font-size: 0.85em;
+}
+.question-text .frac .num { padding-bottom: 4px; }
+.question-text .frac .den { padding-top: 4px; border-top: 2px solid var(--text-primary); }
+
+.answer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.answer-input {
+  max-width: 240px;
+  text-align: center;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+}
+
+.answer-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.option-btn {
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--text-primary);
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.option-btn:hover { border-color: var(--accent-cyan); background: rgba(0,229,255,0.08); }
+.option-btn.correct { border-color: var(--accent-green); background: rgba(0,230,118,0.15); }
+.option-btn.wrong { border-color: var(--accent-magenta); background: rgba(255,45,149,0.12); }
+
+.streak-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Bangers', cursive;
+  font-size: 3rem;
+  color: var(--accent-gold);
+  text-shadow: 0 0 30px rgba(255,215,64,0.6);
+  animation: floatUp 1.2s ease forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.feedback-text {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-top: 8px;
+  min-height: 28px;
+}
+.feedback-text.correct { color: var(--accent-green); }
+.feedback-text.wrong { color: var(--accent-magenta); }
+
+/* EXPLANATION BOX */
+.explanation-box {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: rgba(255, 215, 64, 0.08);
+  border: 1px solid rgba(255, 215, 64, 0.25);
+  border-radius: 12px;
+  text-align: left;
+  font-size: 0.95rem;
+  color: var(--accent-gold);
+  line-height: 1.5;
+  display: none;
+}
+.explanation-box.visible { display: block; animation: fadeIn 0.3s ease; }
+
+/* COMPLETION SCREEN */
+.completion-card {
+  background: var(--bg-card);
+  border: 2px solid rgba(255,215,64,0.3);
+  border-radius: var(--radius);
+  padding: 36px 28px;
+  width: 100%;
+  text-align: center;
+}
+
+.score-display {
+  font-family: 'Bangers', cursive;
+  font-size: 4rem;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stars-row {
+  font-size: 2rem;
+  margin: 12px 0;
+  letter-spacing: 8px;
+}
+
+.qr-container {
+  margin: 24px auto;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.qr-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+  max-width: 400px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+  width: 100%;
+}
+.stat-box {
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 16px 12px;
+}
+.stat-value {
+  font-family: 'Bangers', cursive;
+  font-size: 1.8rem;
+  color: var(--accent-cyan);
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* XP BAR */
+.xp-bar-wrap {
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto;
+}
+.xp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.xp-bar {
+  height: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-orange));
+  border-radius: 5px;
+  transition: width 0.8s ease;
+}
+
+/* VERIFICATION SCREEN */
+.verify-result {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 500px;
+}
+.verify-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.verify-label { color: var(--text-muted); font-size: 0.9rem; }
+.verify-value { font-weight: 700; }
+.verify-valid {
+  color: var(--accent-green);
+  font-family: 'Bangers', cursive;
+  font-size: 1.5rem;
+  margin-top: 16px;
+}
+.verify-invalid {
+  color: var(--accent-magenta);
+  font-family: 'Bangers', cursive;
+  font-size: 1.5rem;
+  margin-top: 16px;
+}
+
+/* UTILITY */
+.gap-12 { gap: 12px; }
+.gap-20 { gap: 20px; }
+.mt-12 { margin-top: 12px; }
+.mt-20 { margin-top: 20px; }
+.mt-32 { margin-top: 32px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-20 { margin-bottom: 20px; }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+.text-sm { font-size: 0.85rem; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-col { flex-direction: column; }
+.w-full { width: 100%; }
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .category-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .question-card { padding: 24px 16px; }
+  .game-header { font-size: 0.85rem; }
+}
+
+/* SCROLL */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ====== WELCOME SCREEN ====== -->
+<div id="screen-welcome" class="screen active">
+  <div class="planet-deco" style="margin-top:40px;"></div>
+  <h1 class="game-title">Math Quest</h1>
+  <p class="subtitle">IB Grade 6 · Practice & Conquer</p>
+  <input type="text" id="player-name" placeholder="Enter your name, explorer..." style="text-align:center;" autofocus>
+  <button class="btn btn-primary mt-20" onclick="startGame()">Launch Mission</button>
+  <button class="btn btn-outline btn-sm mt-12" onclick="showScreen('screen-verify')">🔍 Parent Verification</button>
+</div>
+
+<!-- ====== CATEGORY SCREEN ====== -->
+<div id="screen-categories" class="screen">
+  <h1 class="game-title" style="font-size:2.2rem;">Choose Your Realm</h1>
+  <p class="subtitle" id="welcome-msg">Welcome back, Explorer!</p>
+
+  <div class="xp-bar-wrap">
+    <div class="xp-label"><span id="xp-level">Level 1</span><span id="xp-text">0 / 100 XP</span></div>
+    <div class="xp-bar"><div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="category-grid" id="category-grid"></div>
+  <button class="btn btn-outline btn-sm mt-20" onclick="showScreen('screen-welcome')">← Change Player</button>
+</div>
+
+<!-- ====== LEVEL SCREEN ====== -->
+<div id="screen-levels" class="screen">
+  <h1 class="game-title" style="font-size:2rem;" id="level-title">Numbers</h1>
+  <p class="subtitle" id="level-subtitle">Select a difficulty level</p>
+  <div class="level-grid" id="level-grid"></div>
+  <div class="mt-20 text-center text-muted text-sm" id="level-info">Each mission: 10 questions · ~10 minutes</div>
+  <button class="btn btn-outline btn-sm mt-20" onclick="showScreen('screen-categories')">← Back to Realms</button>
+</div>
+
+<!-- ====== GAME SCREEN ====== -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="game-stat"><span class="icon">🎯</span> <span id="g-score">0</span>/<span id="g-total">10</span></div>
+    <div class="game-stat"><span class="icon">🔥</span> <span id="g-streak">0</span> streak</div>
+    <div class="game-stat"><span class="icon">⏱</span> <span id="g-time">0:00</span></div>
+  </div>
+  <div class="progress-bar-container">
+    <div class="progress-bar-fill" id="g-progress" style="width:0%"></div>
+  </div>
+
+  <div class="question-card" id="question-card">
+    <div class="question-label" id="q-label">Question 1 of 10</div>
+    <div class="question-text" id="q-text"></div>
+    <div class="answer-section" id="answer-section"></div>
+    <div class="feedback-text" id="feedback-text"></div>
+    <div class="explanation-box" id="explanation-box"></div>
+  </div>
+
+  <button class="btn btn-primary mt-20" id="next-btn" style="display:none;" onclick="nextQuestion()">Next →</button>
+</div>
+
+<!-- ====== COMPLETION SCREEN ====== -->
+<div id="screen-complete" class="screen">
+  <div class="completion-card">
+    <div class="stars-row" id="stars-row"></div>
+    <div class="score-display" id="final-score">8/10</div>
+    <p class="mt-12 text-muted" id="final-msg">Great work!</p>
+
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-value" id="stat-correct">0</div><div class="stat-label">Correct</div></div>
+      <div class="stat-box"><div class="stat-value" id="stat-time">0:00</div><div class="stat-label">Time</div></div>
+      <div class="stat-box"><div class="stat-value" id="stat-streak">0</div><div class="stat-label">Best Streak</div></div>
+    </div>
+
+    <p class="text-sm text-muted mb-12">Show this QR code to a parent to confirm your mission</p>
+    <div class="qr-container" id="qr-container"></div>
+    <p class="qr-info" id="qr-info"></p>
+
+    <div class="mt-20 flex-center gap-12" style="flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="showScreen('screen-levels')">Play Again</button>
+      <button class="btn btn-gold btn-sm" onclick="showScreen('screen-categories')">Other Realms</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== VERIFICATION SCREEN ====== -->
+<div id="screen-verify" class="screen">
+  <h1 class="game-title" style="font-size:2rem;">Parent Verification</h1>
+  <p class="subtitle">Scan your child's QR code or paste the code below</p>
+  <input type="text" id="verify-input" placeholder="Paste verification code..." style="font-size:0.9rem;">
+  <button class="btn btn-primary btn-sm mt-12" onclick="verifyCode()">Verify</button>
+  <div id="verify-result" class="mt-20" style="width:100%;max-width:500px;"></div>
+  <button class="btn btn-outline btn-sm mt-20" onclick="showScreen('screen-welcome')">← Back</button>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ============================================================
+// GAME STATE
+// ============================================================
+const QUESTIONS_PER_SESSION = 10;
+const SALT = 'MQ2026x';
+
+let state = {
+  playerName: '',
+  xp: 0,
+  currentCategory: null,
+  currentLevel: 1,
+  questions: [],
+  currentQ: 0,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  startTime: null,
+  timerInterval: null,
+  answered: false,
+  progress: {} // { "numbers-1": { completed: true, bestScore: 8 }, ... }
+};
+
+// Load saved progress
+try {
+  const saved = localStorage.getItem('mathquest_progress');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    state.progress = parsed.progress || {};
+    state.xp = parsed.xp || 0;
+    state.playerName = parsed.playerName || '';
+  }
+} catch(e) {}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('mathquest_progress', JSON.stringify({
+      progress: state.progress,
+      xp: state.xp,
+      playerName: state.playerName
+    }));
+  } catch(e) {}
+}
+
+// ============================================================
+// CATEGORIES
+// ============================================================
+const categories = [
+  { id: 'numbers', name: 'Numbers & Operations', icon: '🔢', desc: 'Integers, decimals, fractions, BODMAS', levels: 5 },
+  { id: 'algebra', name: 'Algebra', icon: '🔤', desc: 'Expressions, equations, patterns', levels: 5 },
+  { id: 'ratios', name: 'Ratios & Percent', icon: '⚖️', desc: 'Proportions, percentages, rates', levels: 5 },
+  { id: 'geometry', name: 'Geometry', icon: '📐', desc: 'Area, perimeter, volume, angles', levels: 5 },
+  { id: 'statistics', name: 'Statistics & Probability', icon: '📊', desc: 'Mean, median, mode, chance', levels: 5 },
+  { id: 'challenge', name: 'Challenge Mix', icon: '🏆', desc: 'All topics, higher difficulty', levels: 3 }
+];
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-categories') renderCategories();
+  if (id === 'screen-verify') document.getElementById('verify-result').innerHTML = '';
+}
+
+function startGame() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) {
+    document.getElementById('player-name').style.borderColor = 'var(--accent-magenta)';
+    document.getElementById('player-name').focus();
+    return;
+  }
+  state.playerName = name;
+  saveProgress();
+  showScreen('screen-categories');
+}
+
+// ============================================================
+// CATEGORY & LEVEL RENDERING
+// ============================================================
+function renderCategories() {
+  document.getElementById('welcome-msg').textContent = `Welcome, ${state.playerName}! 🚀`;
+  updateXPBar();
+
+  const grid = document.getElementById('category-grid');
+  grid.innerHTML = '';
+  categories.forEach(cat => {
+    const completedLevels = countCompleted(cat.id, cat.levels);
+    const pct = Math.round((completedLevels / cat.levels) * 100);
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    card.innerHTML = `
+      <span class="cat-icon">${cat.icon}</span>
+      <div class="cat-name">${cat.name}</div>
+      <div class="cat-desc">${cat.desc}</div>
+      <div class="cat-progress"><div class="cat-progress-fill" style="width:${pct}%"></div></div>
+    `;
+    card.onclick = () => selectCategory(cat.id);
+    grid.appendChild(card);
+  });
+}
+
+function countCompleted(catId, levels) {
+  let c = 0;
+  for (let i = 1; i <= levels; i++) {
+    if (state.progress[`${catId}-${i}`]?.completed) c++;
+  }
+  return c;
+}
+
+function selectCategory(catId) {
+  state.currentCategory = catId;
+  const cat = categories.find(c => c.id === catId);
+  document.getElementById('level-title').innerHTML = `${cat.icon} ${cat.name}`;
+  document.getElementById('level-subtitle').textContent = `${cat.levels} levels · Progressive difficulty`;
+  renderLevels(catId, cat.levels);
+  showScreen('screen-levels');
+}
+
+function renderLevels(catId, numLevels) {
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= numLevels; i++) {
+    const key = `${catId}-${i}`;
+    const prog = state.progress[key];
+    const completed = prog?.completed;
+    // Level unlocking: level 1 always open; others need previous completed
+    const prevCompleted = i === 1 || state.progress[`${catId}-${i-1}`]?.completed;
+    const locked = !prevCompleted && !completed;
+
+    const btn = document.createElement('button');
+    btn.className = 'level-btn' + (completed ? ' completed' : '') + (locked ? ' locked' : '');
+    btn.textContent = i;
+    if (completed && prog.bestScore) btn.title = `Best: ${prog.bestScore}/${QUESTIONS_PER_SESSION}`;
+    if (!locked) {
+      btn.onclick = () => startLevel(catId, i);
+    }
+    grid.appendChild(btn);
+  }
+}
+
+// ============================================================
+// XP SYSTEM
+// ============================================================
+function updateXPBar() {
+  const level = Math.floor(state.xp / 100) + 1;
+  const xpInLevel = state.xp % 100;
+  document.getElementById('xp-level').textContent = `Level ${level} Explorer`;
+  document.getElementById('xp-text').textContent = `${xpInLevel} / 100 XP`;
+  document.getElementById('xp-bar-fill').style.width = `${xpInLevel}%`;
+}
+
+function addXP(amount) {
+  state.xp += amount;
+  saveProgress();
+  updateXPBar();
+}
+
+// ============================================================
+// QUESTION GENERATION
+// ============================================================
+function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function round2(n) { return Math.round(n * 100) / 100; }
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while(b) { [a,b] = [b, a%b]; } return a; }
+function simplify(n, d) { const g = gcd(n, d); return [n/g, d/g]; }
+
+// Shuffle array
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = rng(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Format a number for display
+function fmt(n) {
+  if (Number.isInteger(n)) return n.toString();
+  return round2(n).toString();
+}
+
+// Generate fraction HTML
+function fracHTML(num, den) {
+  return `<span class="frac"><span class="num">${num}</span><span class="den">${den}</span></span>`;
+}
+
+// Make multiple choice options
+function makeOptions(correct, generator) {
+  const opts = new Set();
+  opts.add(fmt(correct));
+  let attempts = 0;
+  while (opts.size < 4 && attempts < 50) {
+    const wrong = generator();
+    if (wrong !== correct && fmt(wrong) !== fmt(correct)) opts.add(fmt(wrong));
+    attempts++;
+  }
+  while (opts.size < 4) opts.add(fmt(correct + rng(1,10)));
+  return shuffle([...opts]);
+}
+
+// ====== NUMBER GENERATORS ======
+function genNumbers(level) {
+  switch(level) {
+    case 1: {
+      const a = rng(-20, 20), b = rng(-20, 20);
+      const op = pick(['+', '−']);
+      const ans = op === '+' ? a + b : a - b;
+      return { text: `${a} ${op} ${b} = ?`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-5,5)),
+        explanation: `${a} ${op} ${b} = ${ans}` };
+    }
+    case 2: {
+      const type = rng(0,1);
+      if (type === 0) {
+        const a = rng(2, 12), b = rng(2, 12);
+        const ans = a * b;
+        return { text: `${a} × ${b} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-10,10)),
+          explanation: `${a} × ${b} = ${ans}` };
+      } else {
+        const b = rng(2, 12), ans = rng(2, 15);
+        const a = b * ans;
+        return { text: `${a} ÷ ${b} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-5,5)),
+          explanation: `${a} ÷ ${b} = ${ans}` };
+      }
+    }
+    case 3: {
+      const type = rng(0,2);
+      if (type === 0) {
+        // Decimal addition/subtraction
+        const a = round2(rng(10,99)/10), b = round2(rng(10,99)/10);
+        const op = pick(['+', '−']);
+        const ans = round2(op === '+' ? a + b : a - b);
+        return { text: `${a} ${op} ${b} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-20,20)/10)),
+          explanation: `${a} ${op} ${b} = ${ans}` };
+      } else if (type === 1) {
+        // Fraction add (same denom)
+        const d = pick([3,4,5,6,8]);
+        const a = rng(1, d-1), b = rng(1, d-1);
+        const sumNum = a + b;
+        const [sn, sd] = simplify(sumNum, d);
+        const ansStr = sd === 1 ? `${sn}` : `${sn}/${sd}`;
+        return { text: `${fracHTML(a,d)} + ${fracHTML(b,d)} = ?`, answer: ansStr, type: 'mc',
+          options: shuffle([ansStr, `${a+b}/${d}`, `${a+b}/${d*2}`, `${Math.abs(a-b)}/${d}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+          explanation: `${a}/${d} + ${b}/${d} = ${a+b}/${d}${sn !== sumNum ? ` = ${ansStr}` : ''}` };
+      } else {
+        // Decimal multiplication
+        const a = round2(rng(11,99)/10), b = rng(2,9);
+        const ans = round2(a * b);
+        return { text: `${a} × ${b} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-30,30)/10)),
+          explanation: `${a} × ${b} = ${ans}` };
+      }
+    }
+    case 4: {
+      const type = rng(0,2);
+      if (type === 0) {
+        // BODMAS
+        const a = rng(2,8), b = rng(2,6), c = rng(1,9);
+        const expr = `${a} + ${b} × ${c}`;
+        const ans = a + b * c;
+        return { text: `${expr} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => rng(0,1) ? (a+b)*c : ans + rng(-10,10)),
+          explanation: `Multiply first: ${b} × ${c} = ${b*c}, then add: ${a} + ${b*c} = ${ans}` };
+      } else if (type === 1) {
+        // Fraction with different denominators
+        const d1 = pick([2,3,4,5]), d2 = pick([3,4,5,6].filter(x=>x!==d1));
+        const n1 = rng(1, d1-1), n2 = rng(1, d2-1);
+        const lcd = (d1 * d2) / gcd(d1, d2);
+        const sumNum = n1 * (lcd/d1) + n2 * (lcd/d2);
+        const [sn, sd] = simplify(sumNum, lcd);
+        const ansStr = sd === 1 ? `${sn}` : `${sn}/${sd}`;
+        return { text: `${fracHTML(n1,d1)} + ${fracHTML(n2,d2)} = ?`, answer: ansStr, type: 'mc',
+          options: shuffle([ansStr, `${n1+n2}/${d1+d2}`, `${n1+n2}/${Math.max(d1,d2)}`, `${sumNum}/${lcd}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+          explanation: `LCD = ${lcd}. Convert: ${n1*(lcd/d1)}/${lcd} + ${n2*(lcd/d2)}/${lcd} = ${sumNum}/${lcd}${sn!==sumNum||sd!==lcd ? ` = ${ansStr}` : ''}` };
+      } else {
+        // BODMAS with brackets
+        const a = rng(2,8), b = rng(1,6), c = rng(2,5);
+        const ans = (a + b) * c;
+        return { text: `(${a} + ${b}) × ${c} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => a + b*c + rng(-5,5)),
+          explanation: `Brackets first: (${a} + ${b}) = ${a+b}, then multiply: ${a+b} × ${c} = ${ans}` };
+      }
+    }
+    case 5: {
+      const type = rng(0,2);
+      if (type === 0) {
+        // Powers
+        const base = rng(2,9), exp = pick([2,3]);
+        const ans = Math.pow(base, exp);
+        return { text: `${base}<sup>${exp}</sup> = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-15,15)),
+          explanation: `${base}${'×'+base}${exp===3?'×'+base:''} = ${ans}` };
+      } else if (type === 1) {
+        // Square roots
+        const ans = rng(2, 15);
+        const sq = ans * ans;
+        return { text: `√${sq} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-4,4)),
+          explanation: `√${sq} = ${ans} because ${ans} × ${ans} = ${sq}` };
+      } else {
+        // Complex BODMAS
+        const a = rng(2,5), b = rng(1,4), c = rng(2,6), d = rng(1,5);
+        const ans = a * b + c * d;
+        return { text: `${a} × ${b} + ${c} × ${d} = ?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-12,12)),
+          explanation: `${a}×${b} = ${a*b} and ${c}×${d} = ${c*d}, so ${a*b} + ${c*d} = ${ans}` };
+      }
+    }
+  }
+}
+
+// ====== ALGEBRA GENERATORS ======
+function genAlgebra(level) {
+  switch(level) {
+    case 1: {
+      // Evaluate expression
+      const x = rng(1, 10);
+      const a = rng(2, 8), b = rng(1, 15);
+      const ans = a * x + b;
+      return { text: `If x = ${x}, find ${a}x + ${b}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-10,10)),
+        explanation: `${a}(${x}) + ${b} = ${a*x} + ${b} = ${ans}` };
+    }
+    case 2: {
+      // Solve x + a = b or x - a = b
+      const ans = rng(1, 20);
+      const a = rng(1, 15);
+      const type = rng(0,1);
+      if (type === 0) {
+        const b = ans + a;
+        return { text: `Solve: x + ${a} = ${b}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-8,8)),
+          explanation: `x = ${b} − ${a} = ${ans}` };
+      } else {
+        const b = ans * rng(2,6);
+        const coeff = b / ans;
+        return { text: `Solve: ${coeff}x = ${b}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-6,6)),
+          explanation: `x = ${b} ÷ ${coeff} = ${ans}` };
+      }
+    }
+    case 3: {
+      // ax + b = c
+      const ans = rng(1, 12);
+      const a = rng(2, 6), b = rng(1, 10);
+      const c = a * ans + b;
+      return { text: `Solve: ${a}x + ${b} = ${c}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-5,5)),
+        explanation: `${a}x = ${c} − ${b} = ${c-b}, so x = ${c-b} ÷ ${a} = ${ans}` };
+    }
+    case 4: {
+      // x on both sides: ax + b = cx + d
+      const ans = rng(1, 10);
+      const a = rng(3, 7), c = rng(1, a-1);
+      const b = rng(1, 8), d = (a - c) * ans + b;
+      return { text: `Solve: ${a}x + ${b} = ${c}x + ${d}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-5,5)),
+        explanation: `${a}x − ${c}x = ${d} − ${b} → ${a-c}x = ${d-b} → x = ${ans}` };
+    }
+    case 5: {
+      // Inequalities and harder equations
+      const type = rng(0,1);
+      if (type === 0) {
+        const ans = rng(2, 10);
+        const a = rng(2,5), b = rng(1,8);
+        const c = a * ans - b;
+        return { text: `Solve: ${a}x − ${b} = ${c}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-5,5)),
+          explanation: `${a}x = ${c} + ${b} = ${c+b}, so x = ${c+b}/${a} = ${ans}` };
+      } else {
+        // Equation with brackets
+        const ans = rng(1, 8);
+        const a = rng(2, 4), b = rng(1, 5), c = a * (ans + b);
+        return { text: `Solve: ${a}(x + ${b}) = ${c}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-4,4)),
+          explanation: `x + ${b} = ${c}/${a} = ${c/a}, so x = ${c/a} − ${b} = ${ans}` };
+      }
+    }
+  }
+}
+
+// ====== RATIO GENERATORS ======
+function genRatios(level) {
+  switch(level) {
+    case 1: {
+      // Simplify ratio
+      const g = rng(2, 6);
+      const a = rng(1, 8) * g, b = rng(1, 8) * g;
+      const ga = a/gcd(a,b), gb = b/gcd(a,b);
+      const ans = `${ga}:${gb}`;
+      return { text: `Simplify the ratio ${a} : ${b}`, answer: ans, type: 'mc',
+        options: shuffle([ans, `${a}:${b}`, `${gb}:${ga}`, `${ga+1}:${gb}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+        explanation: `GCD of ${a} and ${b} is ${gcd(a,b)}. So ${a}÷${gcd(a,b)} : ${b}÷${gcd(a,b)} = ${ans}` };
+    }
+    case 2: {
+      // Solve proportion: a/b = x/d or a/b = c/x  (like 12/x = 4/3)
+      const type = rng(0,1);
+      if (type === 0) {
+        const a = rng(2,12), b = rng(2,8);
+        const mult = rng(2,5);
+        const c = a * mult, d = b * mult;
+        // Present as a/b = ?/d → answer is c
+        return { text: `${fracHTML(a,b)} = ${fracHTML('?',d)}`, answer: c, type: 'mc',
+          options: makeOptions(c, () => c + rng(-6,6)),
+          explanation: `${a}/${b} = ?/${d}. Multiply ${a} by ${d/b} = ${d/b}: ? = ${c}` };
+      } else {
+        // Like the example: 12/x = 4/3
+        const c = rng(2,6), d = rng(2,6);
+        const mult = rng(2,5);
+        const a = c * mult, ans = d * mult;
+        return { text: `${fracHTML(a,'x')} = ${fracHTML(c,d)}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-6,6)),
+          explanation: `Cross multiply: ${a} × ${d} = ${c} × x → ${a*d} = ${c}x → x = ${ans}` };
+      }
+    }
+    case 3: {
+      // Percentage of a number
+      const pct = pick([10, 15, 20, 25, 30, 40, 50, 75]);
+      const num = pick([40, 60, 80, 100, 120, 150, 200, 250, 300]);
+      const ans = round2(pct * num / 100);
+      return { text: `What is ${pct}% of ${num}?`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans + rng(-20,20))),
+        explanation: `${pct}% of ${num} = ${pct}/100 × ${num} = ${ans}` };
+    }
+    case 4: {
+      // Percentage increase/decrease
+      const type = rng(0,1);
+      const original = pick([50, 60, 80, 100, 120, 150, 200, 250]);
+      const pct = pick([10, 15, 20, 25, 30, 40, 50]);
+      const change = round2(original * pct / 100);
+      const ans = type === 0 ? round2(original + change) : round2(original - change);
+      const word = type === 0 ? 'increase' : 'decrease';
+      return { text: `${word.charAt(0).toUpperCase()+word.slice(1)} ${original} by ${pct}%`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans + rng(-25,25))),
+        explanation: `${pct}% of ${original} = ${change}. ${original} ${type===0?'+':'−'} ${change} = ${ans}` };
+    }
+    case 5: {
+      // Reverse percentage or ratio word problem
+      const type = rng(0,1);
+      if (type === 0) {
+        // Reverse %: After 20% increase, price is X. What was original?
+        const pct = pick([10, 20, 25, 50]);
+        const original = pick([40, 50, 60, 80, 100, 120, 150, 200]);
+        const newVal = round2(original * (1 + pct/100));
+        const ans = original;
+        return { text: `After a ${pct}% increase, a price is ${newVal}. What was the original?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-20,20))),
+          explanation: `Original × ${1+pct/100} = ${newVal}. Original = ${newVal} ÷ ${1+pct/100} = ${ans}` };
+      } else {
+        // Sharing in ratio
+        const a = rng(1,5), b = rng(1,5);
+        const total = (a+b) * rng(3,10);
+        const shareA = total * a / (a+b);
+        return { text: `Share ${total} in the ratio ${a}:${b}. What is the larger share?`, answer: Math.max(shareA, total-shareA), type: 'mc',
+          options: makeOptions(Math.max(shareA, total-shareA), () => Math.round(total * rng(1,8) / 10)),
+          explanation: `Total parts = ${a+b}. Each part = ${total/(a+b)}. Shares: ${shareA} and ${total-shareA}. Larger = ${Math.max(shareA, total-shareA)}` };
+      }
+    }
+  }
+}
+
+// ====== GEOMETRY GENERATORS ======
+function genGeometry(level) {
+  switch(level) {
+    case 1: {
+      // Perimeter of rectangle
+      const l = rng(3, 15), w = rng(2, 12);
+      const ans = 2 * (l + w);
+      return { text: `Perimeter of a rectangle: length = ${l} cm, width = ${w} cm`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => rng(0,1) ? l*w : ans + rng(-8,8)),
+        explanation: `P = 2(l + w) = 2(${l} + ${w}) = 2 × ${l+w} = ${ans} cm` };
+    }
+    case 2: {
+      // Area of rectangle or triangle
+      const type = rng(0,1);
+      if (type === 0) {
+        const l = rng(3, 15), w = rng(2, 12);
+        const ans = l * w;
+        return { text: `Area of a rectangle: ${l} cm × ${w} cm`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => rng(0,1) ? 2*(l+w) : ans + rng(-15,15)),
+          explanation: `A = l × w = ${l} × ${w} = ${ans} cm²` };
+      } else {
+        const b = rng(4, 16), h = rng(3, 12);
+        const ans = round2(b * h / 2);
+        return { text: `Area of a triangle: base = ${b} cm, height = ${h} cm`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => rng(0,1) ? b*h : round2(ans + rng(-10,10))),
+          explanation: `A = ½ × b × h = ½ × ${b} × ${h} = ${ans} cm²` };
+      }
+    }
+    case 3: {
+      // Area of circle or parallelogram
+      const type = rng(0,1);
+      if (type === 0) {
+        const r = rng(2, 10);
+        const ans = round2(Math.PI * r * r);
+        return { text: `Area of a circle with radius ${r} cm (use π ≈ 3.14)`, answer: round2(3.14*r*r), type: 'mc',
+          options: makeOptions(round2(3.14*r*r), () => round2(3.14*r*r + rng(-20,20))),
+          explanation: `A = πr² = 3.14 × ${r}² = 3.14 × ${r*r} = ${round2(3.14*r*r)} cm²` };
+      } else {
+        const b = rng(5, 15), h = rng(3, 10);
+        const ans = b * h;
+        return { text: `Area of a parallelogram: base = ${b} cm, height = ${h} cm`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => rng(0,1) ? 2*(b+h) : ans + rng(-15,15)),
+          explanation: `A = b × h = ${b} × ${h} = ${ans} cm²` };
+      }
+    }
+    case 4: {
+      // Volume of rectangular prism or trapezoid area
+      const type = rng(0,1);
+      if (type === 0) {
+        const l = rng(2,10), w = rng(2,8), h = rng(2,8);
+        const ans = l * w * h;
+        return { text: `Volume of a box: ${l} cm × ${w} cm × ${h} cm`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-30,30)),
+          explanation: `V = l × w × h = ${l} × ${w} × ${h} = ${ans} cm³` };
+      } else {
+        const a = rng(4, 12), b = rng(6, 16), h = rng(3, 10);
+        const ans = round2((a + b) * h / 2);
+        return { text: `Area of trapezoid: parallel sides ${a} cm & ${b} cm, height ${h} cm`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-15,15))),
+          explanation: `A = ½(a + b) × h = ½(${a} + ${b}) × ${h} = ½ × ${a+b} × ${h} = ${ans} cm²` };
+      }
+    }
+    case 5: {
+      // Surface area or circumference + composite
+      const type = rng(0,2);
+      if (type === 0) {
+        const l = rng(2,8), w = rng(2,6), h = rng(2,6);
+        const ans = 2 * (l*w + l*h + w*h);
+        return { text: `Surface area of a box: ${l} × ${w} × ${h} cm`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => rng(0,1) ? l*w*h : ans + rng(-30,30)),
+          explanation: `SA = 2(lw + lh + wh) = 2(${l*w} + ${l*h} + ${w*h}) = 2 × ${l*w+l*h+w*h} = ${ans} cm²` };
+      } else if (type === 1) {
+        // Circumference
+        const r = rng(2, 12);
+        const ans = round2(2 * 3.14 * r);
+        return { text: `Circumference of a circle, radius = ${r} cm (π ≈ 3.14)`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-10,10))),
+          explanation: `C = 2πr = 2 × 3.14 × ${r} = ${ans} cm` };
+      } else {
+        // Angle problem
+        const a = rng(20, 80);
+        const b = rng(20, 160 - a);
+        const ans = 180 - a - b;
+        return { text: `In a triangle, two angles are ${a}° and ${b}°. Find the third angle.`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-20,20)),
+          explanation: `Angles in a triangle sum to 180°. ${a} + ${b} + ? = 180 → ? = ${ans}°` };
+      }
+    }
+  }
+}
+
+// ====== STATISTICS GENERATORS ======
+function genStatistics(level) {
+  switch(level) {
+    case 1: {
+      // Mean
+      const n = rng(4, 6);
+      const nums = Array.from({length: n}, () => rng(2, 20));
+      const sum = nums.reduce((a,b) => a+b, 0);
+      // Make sure mean is clean
+      const extra = n - (sum % n);
+      if (sum % n !== 0) nums[0] += (extra === n ? 0 : extra);
+      const finalSum = nums.reduce((a,b) => a+b, 0);
+      const ans = finalSum / n;
+      return { text: `Find the mean of: ${nums.join(', ')}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-5,5)),
+        explanation: `Sum = ${finalSum}, Count = ${n}. Mean = ${finalSum} ÷ ${n} = ${ans}` };
+    }
+    case 2: {
+      // Median
+      const n = pick([5, 7, 9]);
+      const nums = Array.from({length: n}, () => rng(1, 30)).sort((a,b) => a-b);
+      const ans = nums[Math.floor(n/2)];
+      return { text: `Find the median of: ${nums.join(', ')}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-5,5)),
+        explanation: `Sorted: ${nums.join(', ')}. Middle value (position ${Math.floor(n/2)+1}) = ${ans}` };
+    }
+    case 3: {
+      // Mode and Range
+      const type = rng(0,1);
+      if (type === 0) {
+        const mode = rng(3, 15);
+        const nums = [mode, mode, mode, rng(1,20), rng(1,20), rng(1,20), rng(1,20)].sort((a,b)=>a-b);
+        return { text: `Find the mode of: ${nums.join(', ')}`, answer: mode, type: 'mc',
+          options: makeOptions(mode, () => pick(nums)),
+          explanation: `${mode} appears 3 times (most frequent), so mode = ${mode}` };
+      } else {
+        const nums = Array.from({length: 6}, () => rng(2, 40)).sort((a,b) => a-b);
+        const ans = nums[nums.length-1] - nums[0];
+        return { text: `Find the range of: ${nums.join(', ')}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-8,8)),
+          explanation: `Range = max − min = ${nums[nums.length-1]} − ${nums[0]} = ${ans}` };
+      }
+    }
+    case 4: {
+      // Mean from frequency table
+      const values = [rng(1,5), rng(6,10), rng(11,15)];
+      const freqs = [rng(2,6), rng(3,7), rng(2,5)];
+      const totalF = freqs.reduce((a,b)=>a+b,0);
+      const totalFX = values.reduce((s,v,i)=>s+v*freqs[i],0);
+      const ans = round2(totalFX / totalF);
+      const tableText = `Values: ${values.join(', ')} with frequencies: ${freqs.join(', ')}`;
+      return { text: `Find the mean. ${tableText}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans + rng(-4,4))),
+        explanation: `Σfx = ${values.map((v,i)=>`${v}×${freqs[i]}`).join(' + ')} = ${totalFX}. Σf = ${totalF}. Mean = ${totalFX}/${totalF} = ${ans}` };
+    }
+    case 5: {
+      // Probability
+      const type = rng(0,1);
+      if (type === 0) {
+        const total = pick([6, 8, 10, 12, 20]);
+        const favorable = rng(1, total - 1);
+        const [sn, sd] = simplify(favorable, total);
+        const ans = sd === 1 ? `${sn}` : `${sn}/${sd}`;
+        return { text: `A bag has ${total} marbles, ${favorable} are red. P(red) = ?`, answer: ans, type: 'mc',
+          options: shuffle([ans, `${favorable}/${total}`, `${total-favorable}/${total}`, `${favorable+1}/${total}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+          explanation: `P(red) = favorable/total = ${favorable}/${total}${sn!==favorable||sd!==total ? ` = ${ans}` : ''}` };
+      } else {
+        // Two-step probability
+        const r = rng(2,5), b = rng(2,5);
+        const total = r + b;
+        const pRed = `${r}/${total}`;
+        const [sn,sd] = simplify(r, total);
+        const ans = sd===1 ? `${sn}` : `${sn}/${sd}`;
+        return { text: `A bag has ${r} red and ${b} blue marbles. What is the probability of picking red?`, answer: ans, type: 'mc',
+          options: shuffle([ans, `${b}/${total}`, `${r}/${r+b+1}`, `1/${total}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+          explanation: `P(red) = ${r}/${total}${sn!==r||sd!==total ? ` = ${ans}` : ''}` };
+      }
+    }
+  }
+}
+
+// ====== CHALLENGE MIX ======
+function genChallenge(level) {
+  const effectiveLevel = Math.min(level + 2, 5); // Challenge starts at difficulty 3+
+  const gen = pick([genNumbers, genAlgebra, genRatios, genGeometry, genStatistics]);
+  return gen(effectiveLevel);
+}
+
+// Master generator
+function generateQuestion(category, level) {
+  switch(category) {
+    case 'numbers': return genNumbers(level);
+    case 'algebra': return genAlgebra(level);
+    case 'ratios': return genRatios(level);
+    case 'geometry': return genGeometry(level);
+    case 'statistics': return genStatistics(level);
+    case 'challenge': return genChallenge(level);
+    default: return genNumbers(level);
+  }
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function startLevel(catId, level) {
+  state.currentCategory = catId;
+  state.currentLevel = level;
+  state.questions = [];
+  state.currentQ = 0;
+  state.score = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.answered = false;
+
+  // Generate questions
+  for (let i = 0; i < QUESTIONS_PER_SESSION; i++) {
+    state.questions.push(generateQuestion(catId, level));
+  }
+
+  state.startTime = Date.now();
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateTimer, 1000);
+
+  updateGameUI();
+  showScreen('screen-game');
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const min = Math.floor(elapsed / 60);
+  const sec = elapsed % 60;
+  document.getElementById('g-time').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+}
+
+function updateGameUI() {
+  const q = state.questions[state.currentQ];
+  document.getElementById('q-label').textContent = `Question ${state.currentQ + 1} of ${QUESTIONS_PER_SESSION}`;
+  document.getElementById('q-text').innerHTML = q.text;
+  document.getElementById('g-score').textContent = state.score;
+  document.getElementById('g-total').textContent = QUESTIONS_PER_SESSION;
+  document.getElementById('g-streak').textContent = state.streak;
+  document.getElementById('g-progress').style.width = `${(state.currentQ / QUESTIONS_PER_SESSION) * 100}%`;
+  document.getElementById('feedback-text').textContent = '';
+  document.getElementById('feedback-text').className = 'feedback-text';
+  document.getElementById('explanation-box').className = 'explanation-box';
+  document.getElementById('next-btn').style.display = 'none';
+  state.answered = false;
+
+  const section = document.getElementById('answer-section');
+  section.innerHTML = '';
+
+  if (q.type === 'mc' && q.options) {
+    const grid = document.createElement('div');
+    grid.className = 'answer-options';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerHTML = opt;
+      btn.onclick = () => checkAnswer(opt, btn, grid);
+      grid.appendChild(btn);
+    });
+    section.appendChild(grid);
+  } else {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'answer-input';
+    inp.placeholder = 'Your answer...';
+    inp.onkeydown = (e) => { if (e.key === 'Enter') checkInputAnswer(inp); };
+    section.appendChild(inp);
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-primary btn-sm mt-12';
+    btn.textContent = 'Submit';
+    btn.onclick = () => checkInputAnswer(inp);
+    section.appendChild(btn);
+    setTimeout(() => inp.focus(), 100);
+  }
+}
+
+function checkAnswer(selected, btnEl, grid) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const q = state.questions[state.currentQ];
+  const correct = selected === fmt(q.answer) || selected === q.answer.toString();
+
+  // Highlight buttons
+  grid.querySelectorAll('.option-btn').forEach(b => {
+    if (b.innerHTML === fmt(q.answer) || b.innerHTML === q.answer.toString()) {
+      b.classList.add('correct');
+    }
+    if (b === btnEl && !correct) {
+      b.classList.add('wrong');
+    }
+    b.style.pointerEvents = 'none';
+  });
+
+  processAnswer(correct, q);
+}
+
+function checkInputAnswer(inp) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const q = state.questions[state.currentQ];
+  const val = inp.value.trim();
+  const correct = val === fmt(q.answer) || val === q.answer.toString() || parseFloat(val) === q.answer;
+
+  inp.style.borderColor = correct ? 'var(--accent-green)' : 'var(--accent-magenta)';
+  processAnswer(correct, q);
+}
+
+function processAnswer(correct, q) {
+  const card = document.getElementById('question-card');
+  const feedback = document.getElementById('feedback-text');
+  const explBox = document.getElementById('explanation-box');
+
+  if (correct) {
+    state.score++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+
+    card.className = 'question-card correct-flash';
+    feedback.textContent = pick(['Correct! ✨', 'Nailed it! 🎯', 'Perfect! 🌟', 'Excellent! 💫', 'You got it! 🔥']);
+    feedback.className = 'feedback-text correct';
+
+    // Streak popup
+    if (state.streak >= 3) {
+      showStreakPopup(state.streak);
+    }
+  } else {
+    state.streak = 0;
+    card.className = 'question-card wrong-flash';
+    feedback.textContent = `Not quite — the answer is ${q.answer}`;
+    feedback.className = 'feedback-text wrong';
+  }
+
+  // Show explanation
+  if (q.explanation) {
+    explBox.innerHTML = `💡 ${q.explanation}`;
+    explBox.className = 'explanation-box visible';
+  }
+
+  document.getElementById('next-btn').style.display = 'inline-block';
+  document.getElementById('next-btn').focus();
+}
+
+function showStreakPopup(n) {
+  const popup = document.createElement('div');
+  popup.className = 'streak-popup';
+  popup.textContent = `🔥 ${n} STREAK!`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1300);
+}
+
+function nextQuestion() {
+  state.currentQ++;
+  if (state.currentQ >= QUESTIONS_PER_SESSION) {
+    endSession();
+  } else {
+    document.getElementById('question-card').className = 'question-card';
+    updateGameUI();
+  }
+}
+
+// ============================================================
+// SESSION COMPLETION
+// ============================================================
+function endSession() {
+  clearInterval(state.timerInterval);
+
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const min = Math.floor(elapsed / 60);
+  const sec = elapsed % 60;
+  const timeStr = `${min}:${sec.toString().padStart(2,'0')}`;
+
+  // Record progress
+  const key = `${state.currentCategory}-${state.currentLevel}`;
+  const prev = state.progress[key] || {};
+  if (state.score >= 7) { // Need 7/10 to pass
+    state.progress[key] = { completed: true, bestScore: Math.max(state.score, prev.bestScore || 0) };
+  } else {
+    state.progress[key] = { completed: prev.completed || false, bestScore: Math.max(state.score, prev.bestScore || 0) };
+  }
+
+  // Add XP
+  const xpEarned = state.score * 5 + state.bestStreak * 3 + (state.score >= 10 ? 20 : 0);
+  addXP(xpEarned);
+  saveProgress();
+
+  // Stars
+  const stars = state.score >= 10 ? '⭐⭐⭐' : state.score >= 8 ? '⭐⭐' : state.score >= 7 ? '⭐' : '💪';
+
+  // Messages
+  const msgs = {
+    10: 'PERFECT SCORE! You are a Math Legend! 🏆',
+    9: 'Outstanding! Nearly perfect! 🌟',
+    8: 'Great job! Really solid work! 💫',
+    7: 'Well done! Level cleared! ✅',
+    6: 'Almost there — try again to unlock! 💪',
+    5: 'Keep practicing — you\'re getting better! 📈',
+  };
+  const msg = msgs[Math.min(state.score, 10)] || msgs[Math.max(state.score, 5)] || 'Keep going! Practice makes progress! 🚀';
+
+  document.getElementById('final-score').textContent = `${state.score}/${QUESTIONS_PER_SESSION}`;
+  document.getElementById('stars-row').textContent = stars;
+  document.getElementById('final-msg').textContent = msg;
+  document.getElementById('stat-correct').textContent = state.score;
+  document.getElementById('stat-time').textContent = timeStr;
+  document.getElementById('stat-streak').textContent = state.bestStreak;
+
+  // Generate QR code
+  generateQR(timeStr, elapsed);
+
+  showScreen('screen-complete');
+}
+
+// ============================================================
+// QR CODE VERIFICATION
+// ============================================================
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash |= 0;
+  }
+  // Mix with salt
+  const saltHash = SALT.split('').reduce((h, c) => ((h << 5) - h) + c.charCodeAt(0), 0);
+  return Math.abs(hash ^ saltHash).toString(36).slice(0, 8);
+}
+
+function generateQR(timeStr, elapsedSec) {
+  const catName = categories.find(c => c.id === state.currentCategory)?.name || state.currentCategory;
+  const now = new Date();
+  const dateStr = now.toISOString();
+
+  const payload = {
+    n: state.playerName,
+    c: catName,
+    l: state.currentLevel,
+    s: state.score,
+    t: QUESTIONS_PER_SESSION,
+    d: elapsedSec,
+    ts: dateStr
+  };
+
+  const dataStr = JSON.stringify(payload);
+  const hash = simpleHash(dataStr + SALT);
+  payload.v = hash;
+
+  const encoded = btoa(JSON.stringify(payload));
+  const qrData = `MATHQUEST:${encoded}`;
+
+  const container = document.getElementById('qr-container');
+  container.innerHTML = '';
+
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(container, {
+      text: qrData,
+      width: 180,
+      height: 180,
+      colorDark: '#0b0e2b',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    // Fallback if QR library didn't load
+    const p = document.createElement('p');
+    p.style.cssText = 'font-family:monospace; font-size:0.7rem; word-break:break-all; color:#333; max-width:300px; padding:8px;';
+    p.textContent = qrData;
+    container.appendChild(p);
+  }
+
+  const info = document.getElementById('qr-info');
+  info.innerHTML = `Completed: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}<br>
+    Category: ${catName} · Level ${state.currentLevel} · Score: ${state.score}/${QUESTIONS_PER_SESSION} · Time: ${timeStr}<br>
+    <span style="font-size:0.7rem;opacity:0.7">Verification: ${hash}</span>`;
+}
+
+function verifyCode() {
+  const input = document.getElementById('verify-input').value.trim();
+  const resultDiv = document.getElementById('verify-result');
+
+  try {
+    let data;
+    if (input.startsWith('MATHQUEST:')) {
+      data = JSON.parse(atob(input.replace('MATHQUEST:', '')));
+    } else {
+      data = JSON.parse(atob(input));
+    }
+
+    const storedHash = data.v;
+    delete data.v;
+    const checkHash = simpleHash(JSON.stringify(data) + SALT);
+    const valid = storedHash === checkHash;
+
+    const ts = new Date(data.ts);
+    const mins = Math.floor(data.d / 60);
+    const secs = data.d % 60;
+
+    resultDiv.innerHTML = `
+      <div class="verify-result">
+        <div class="${valid ? 'verify-valid' : 'verify-invalid'}">${valid ? '✅ VERIFIED' : '❌ INVALID CODE'}</div>
+        <div class="verify-row"><span class="verify-label">Student</span><span class="verify-value">${data.n}</span></div>
+        <div class="verify-row"><span class="verify-label">Category</span><span class="verify-value">${data.c}</span></div>
+        <div class="verify-row"><span class="verify-label">Level</span><span class="verify-value">${data.l}</span></div>
+        <div class="verify-row"><span class="verify-label">Score</span><span class="verify-value" style="color:${data.s >= 7 ? 'var(--accent-green)' : 'var(--accent-magenta)'}">${data.s} / ${data.t}</span></div>
+        <div class="verify-row"><span class="verify-label">Time Spent</span><span class="verify-value">${mins}m ${secs}s</span></div>
+        <div class="verify-row"><span class="verify-label">Date</span><span class="verify-value">${ts.toLocaleDateString()} ${ts.toLocaleTimeString()}</span></div>
+        ${data.s >= 7 ? '<p style="margin-top:16px;color:var(--accent-green);font-weight:700;">✅ Level Passed</p>' : '<p style="margin-top:16px;color:var(--accent-magenta);font-weight:700;">Level not yet passed (need 7+)</p>'}
+      </div>
+    `;
+  } catch(e) {
+    resultDiv.innerHTML = `<div class="verify-result"><div class="verify-invalid">❌ Could not read this code</div><p class="text-muted mt-12">Make sure you scanned/pasted the complete QR code data.</p></div>`;
+  }
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+window.onload = () => {
+  if (state.playerName) {
+    document.getElementById('player-name').value = state.playerName;
+  }
+
+  // Check for verification mode via URL params
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('verify')) {
+    document.getElementById('verify-input').value = params.get('verify');
+    showScreen('screen-verify');
+    verifyCode();
+  }
+};
+</script>
+
+</body>
+</html>
