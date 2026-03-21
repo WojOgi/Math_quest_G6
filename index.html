@@ -1627,6 +1627,14 @@ function simpleHash(str) {
   return Math.abs(hash ^ saltHash).toString(36).slice(0, 8);
 }
 
+function encodeBase64Unicode(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function decodeBase64Unicode(str) {
+  return decodeURIComponent(escape(atob(str)));
+}
+
 function generateQR(timeStr, elapsedSec) {
   const catName = categories.find(c => c.id === state.currentCategory)?.name || state.currentCategory;
   const now = new Date();
@@ -1646,7 +1654,7 @@ function generateQR(timeStr, elapsedSec) {
   const hash = simpleHash(dataStr + SALT);
   payload.v = hash;
 
-  const encoded = btoa(JSON.stringify(payload));
+  const encoded = encodeBase64Unicode(JSON.stringify(payload));
   const qrData = `MATHQUEST:${encoded}`;
 
   const container = document.getElementById('qr-container');
@@ -1672,7 +1680,7 @@ function generateQR(timeStr, elapsedSec) {
   const info = document.getElementById('qr-info');
   info.innerHTML = `Completed: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}<br>
     Category: ${catName} · Level ${state.currentLevel} · Score: ${state.score}/${QUESTIONS_PER_SESSION} · Time: ${timeStr}<br>
-    <span style="font-size:0.7rem;opacity:0.7">Verification: ${hash}</span>`;
+    <span style="font-size:0.7rem;opacity:0.7">Verification: ${hash} (tamper-evident, local only)</span>`;
 }
 
 function verifyCode() {
@@ -1682,9 +1690,9 @@ function verifyCode() {
   try {
     let data;
     if (input.startsWith('MATHQUEST:')) {
-      data = JSON.parse(atob(input.replace('MATHQUEST:', '')));
+      data = JSON.parse(decodeBase64Unicode(input.replace('MATHQUEST:', '')));
     } else {
-      data = JSON.parse(atob(input));
+      data = JSON.parse(decodeBase64Unicode(input));
     }
 
     const storedHash = data.v;
@@ -1696,18 +1704,50 @@ function verifyCode() {
     const mins = Math.floor(data.d / 60);
     const secs = data.d % 60;
 
-    resultDiv.innerHTML = `
-      <div class="verify-result">
-        <div class="${valid ? 'verify-valid' : 'verify-invalid'}">${valid ? '✅ VERIFIED' : '❌ INVALID CODE'}</div>
-        <div class="verify-row"><span class="verify-label">Student</span><span class="verify-value">${data.n}</span></div>
-        <div class="verify-row"><span class="verify-label">Category</span><span class="verify-value">${data.c}</span></div>
-        <div class="verify-row"><span class="verify-label">Level</span><span class="verify-value">${data.l}</span></div>
-        <div class="verify-row"><span class="verify-label">Score</span><span class="verify-value" style="color:${data.s >= 7 ? 'var(--accent-green)' : 'var(--accent-magenta)'}">${data.s} / ${data.t}</span></div>
-        <div class="verify-row"><span class="verify-label">Time Spent</span><span class="verify-value">${mins}m ${secs}s</span></div>
-        <div class="verify-row"><span class="verify-label">Date</span><span class="verify-value">${ts.toLocaleDateString()} ${ts.toLocaleTimeString()}</span></div>
-        ${data.s >= 7 ? '<p style="margin-top:16px;color:var(--accent-green);font-weight:700;">✅ Level Passed</p>' : '<p style="margin-top:16px;color:var(--accent-magenta);font-weight:700;">Level not yet passed (need 7+)</p>'}
-      </div>
-    `;
+    resultDiv.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'verify-result';
+
+    const status = document.createElement('div');
+    status.className = valid ? 'verify-valid' : 'verify-invalid';
+    status.textContent = valid ? '✅ VERIFIED' : '❌ INVALID CODE';
+    card.appendChild(status);
+
+    const makeRow = (label, value, valueColor) => {
+      const row = document.createElement('div');
+      row.className = 'verify-row';
+      const l = document.createElement('span');
+      l.className = 'verify-label';
+      l.textContent = label;
+      const v = document.createElement('span');
+      v.className = 'verify-value';
+      v.textContent = value;
+      if (valueColor) v.style.color = valueColor;
+      row.appendChild(l);
+      row.appendChild(v);
+      return row;
+    };
+
+    card.appendChild(makeRow('Student', String(data.n ?? '')));
+    card.appendChild(makeRow('Category', String(data.c ?? '')));
+    card.appendChild(makeRow('Level', String(data.l ?? '')));
+    card.appendChild(makeRow('Score', `${data.s} / ${data.t}`, data.s >= 7 ? 'var(--accent-green)' : 'var(--accent-magenta)'));
+    card.appendChild(makeRow('Time Spent', `${mins}m ${secs}s`));
+    card.appendChild(makeRow('Date', `${ts.toLocaleDateString()} ${ts.toLocaleTimeString()}`));
+
+    const pass = document.createElement('p');
+    pass.style.marginTop = '16px';
+    pass.style.fontWeight = '700';
+    if (data.s >= 7) {
+      pass.style.color = 'var(--accent-green)';
+      pass.textContent = '✅ Level Passed';
+    } else {
+      pass.style.color = 'var(--accent-magenta)';
+      pass.textContent = 'Level not yet passed (need 7+)';
+    }
+    card.appendChild(pass);
+
+    resultDiv.appendChild(card);
   } catch(e) {
     resultDiv.innerHTML = `<div class="verify-result"><div class="verify-invalid">❌ Could not read this code</div><p class="text-muted mt-12">Make sure you scanned/pasted the complete QR code data.</p></div>`;
   }
