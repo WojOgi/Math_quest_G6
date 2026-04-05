@@ -254,6 +254,19 @@ input:focus {
   border-color: var(--accent-gold);
   box-shadow: var(--glow-gold);
 }
+.category-card.new-badge::before {
+  content: 'NEW';
+  position: absolute;
+  top: 10px;
+  right: -24px;
+  background: linear-gradient(135deg, var(--accent-magenta), #c51162);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 3px 28px;
+  transform: rotate(35deg);
+}
 
 .cat-icon {
   font-size: 2.2rem;
@@ -761,7 +774,7 @@ let state = {
   progress: {} // { "numbers-1": { completed: true, bestScore: 8 }, ... }
 };
 
-// Load saved progress
+// Load saved progress — fully backward-compatible
 try {
   const saved = localStorage.getItem('mathquest_progress');
   if (saved) {
@@ -783,15 +796,18 @@ function saveProgress() {
 }
 
 // ============================================================
-// CATEGORIES
+// CATEGORIES  (levels increased; new Engineering realm added)
+// Existing keys like "numbers-1" … "numbers-5" stay identical,
+// so previous completions carry over automatically.
 // ============================================================
 const categories = [
-  { id: 'numbers', name: 'Numbers & Operations', icon: '🔢', desc: 'Integers, decimals, fractions, BODMAS', levels: 5 },
-  { id: 'algebra', name: 'Algebra', icon: '🔤', desc: 'Expressions, equations, patterns', levels: 5 },
-  { id: 'ratios', name: 'Ratios & Percent', icon: '⚖️', desc: 'Proportions, percentages, rates', levels: 5 },
-  { id: 'geometry', name: 'Geometry', icon: '📐', desc: 'Area, perimeter, volume, angles', levels: 5 },
-  { id: 'statistics', name: 'Statistics & Probability', icon: '📊', desc: 'Mean, median, mode, chance', levels: 5 },
-  { id: 'challenge', name: 'Challenge Mix', icon: '🏆', desc: 'All topics, higher difficulty', levels: 3 }
+  { id: 'numbers',    name: 'Numbers & Operations', icon: '🔢', desc: 'Integers, decimals, fractions, powers',  levels: 8 },
+  { id: 'algebra',    name: 'Algebra',              icon: '🔤', desc: 'Expressions, equations, sequences',      levels: 8 },
+  { id: 'ratios',     name: 'Ratios & Percent',     icon: '⚖️', desc: 'Proportions, percentages, rates',        levels: 8 },
+  { id: 'geometry',   name: 'Geometry',              icon: '📐', desc: 'Area, volume, angles, coordinates',      levels: 8 },
+  { id: 'statistics', name: 'Statistics & Probability', icon: '📊', desc: 'Mean, median, mode, chance',          levels: 8 },
+  { id: 'engineering',name: 'Engineering',           icon: '⚙️', desc: 'Units, speed, density, gears, circuits', levels: 8, isNew: true },
+  { id: 'challenge',  name: 'Challenge Mix',         icon: '🏆', desc: 'All topics, higher difficulty',          levels: 5 }
 ];
 
 // ============================================================
@@ -829,7 +845,7 @@ function renderCategories() {
     const completedLevels = countCompleted(cat.id, cat.levels);
     const pct = Math.round((completedLevels / cat.levels) * 100);
     const card = document.createElement('div');
-    card.className = 'category-card';
+    card.className = 'category-card' + (cat.isNew ? ' new-badge' : '');
     card.innerHTML = `
       <span class="cat-icon">${cat.icon}</span>
       <div class="cat-name">${cat.name}</div>
@@ -865,7 +881,6 @@ function renderLevels(catId, numLevels) {
     const key = `${catId}-${i}`;
     const prog = state.progress[key];
     const completed = prog?.completed;
-    // Level unlocking: level 1 always open; others need previous completed
     const prevCompleted = i === 1 || state.progress[`${catId}-${i-1}`]?.completed;
     const locked = !prevCompleted && !completed;
 
@@ -898,15 +913,15 @@ function addXP(amount) {
 }
 
 // ============================================================
-// QUESTION GENERATION
+// QUESTION GENERATION — UTILITIES
 // ============================================================
 function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function round2(n) { return Math.round(n * 100) / 100; }
 function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while(b) { [a,b] = [b, a%b]; } return a; }
+function lcm(a, b) { return Math.abs(a * b) / gcd(a, b); }
 function simplify(n, d) { const g = gcd(n, d); return [n/g, d/g]; }
 
-// Shuffle array
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -916,18 +931,15 @@ function shuffle(arr) {
   return a;
 }
 
-// Format a number for display
 function fmt(n) {
   if (Number.isInteger(n)) return n.toString();
   return round2(n).toString();
 }
 
-// Generate fraction HTML
 function fracHTML(num, den) {
   return `<span class="frac"><span class="num">${num}</span><span class="den">${den}</span></span>`;
 }
 
-// Make multiple choice options
 function makeOptions(correct, generator) {
   const opts = new Set();
   opts.add(fmt(correct));
@@ -941,7 +953,9 @@ function makeOptions(correct, generator) {
   return shuffle([...opts]);
 }
 
-// ====== NUMBER GENERATORS ======
+// ============================================================
+// NUMBERS GENERATOR  (levels 1-8)
+// ============================================================
 function genNumbers(level) {
   switch(level) {
     case 1: {
@@ -971,7 +985,6 @@ function genNumbers(level) {
     case 3: {
       const type = rng(0,2);
       if (type === 0) {
-        // Decimal addition/subtraction
         const a = round2(rng(10,99)/10), b = round2(rng(10,99)/10);
         const op = pick(['+', '−']);
         const ans = round2(op === '+' ? a + b : a - b);
@@ -979,7 +992,6 @@ function genNumbers(level) {
           options: makeOptions(ans, () => round2(ans + rng(-20,20)/10)),
           explanation: `${a} ${op} ${b} = ${ans}` };
       } else if (type === 1) {
-        // Fraction add (same denom)
         const d = pick([3,4,5,6,8]);
         const a = rng(1, d-1), b = rng(1, d-1);
         const sumNum = a + b;
@@ -989,7 +1001,6 @@ function genNumbers(level) {
           options: shuffle([ansStr, `${a+b}/${d}`, `${a+b}/${d*2}`, `${Math.abs(a-b)}/${d}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
           explanation: `${a}/${d} + ${b}/${d} = ${a+b}/${d}${sn !== sumNum ? ` = ${ansStr}` : ''}` };
       } else {
-        // Decimal multiplication
         const a = round2(rng(11,99)/10), b = rng(2,9);
         const ans = round2(a * b);
         return { text: `${a} × ${b} = ?`, answer: ans, type: 'mc',
@@ -1000,7 +1011,6 @@ function genNumbers(level) {
     case 4: {
       const type = rng(0,2);
       if (type === 0) {
-        // BODMAS
         const a = rng(2,8), b = rng(2,6), c = rng(1,9);
         const expr = `${a} + ${b} × ${c}`;
         const ans = a + b * c;
@@ -1008,7 +1018,6 @@ function genNumbers(level) {
           options: makeOptions(ans, () => rng(0,1) ? (a+b)*c : ans + rng(-10,10)),
           explanation: `Multiply first: ${b} × ${c} = ${b*c}, then add: ${a} + ${b*c} = ${ans}` };
       } else if (type === 1) {
-        // Fraction with different denominators
         const d1 = pick([2,3,4,5]), d2 = pick([3,4,5,6].filter(x=>x!==d1));
         const n1 = rng(1, d1-1), n2 = rng(1, d2-1);
         const lcd = (d1 * d2) / gcd(d1, d2);
@@ -1019,7 +1028,6 @@ function genNumbers(level) {
           options: shuffle([ansStr, `${n1+n2}/${d1+d2}`, `${n1+n2}/${Math.max(d1,d2)}`, `${sumNum}/${lcd}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
           explanation: `LCD = ${lcd}. Convert: ${n1*(lcd/d1)}/${lcd} + ${n2*(lcd/d2)}/${lcd} = ${sumNum}/${lcd}${sn!==sumNum||sd!==lcd ? ` = ${ansStr}` : ''}` };
       } else {
-        // BODMAS with brackets
         const a = rng(2,8), b = rng(1,6), c = rng(2,5);
         const ans = (a + b) * c;
         return { text: `(${a} + ${b}) × ${c} = ?`, answer: ans, type: 'mc',
@@ -1030,21 +1038,18 @@ function genNumbers(level) {
     case 5: {
       const type = rng(0,2);
       if (type === 0) {
-        // Powers
         const base = rng(2,9), exp = pick([2,3]);
         const ans = Math.pow(base, exp);
         return { text: `${base}<sup>${exp}</sup> = ?`, answer: ans, type: 'mc',
           options: makeOptions(ans, () => ans + rng(-15,15)),
           explanation: `${base}${'×'+base}${exp===3?'×'+base:''} = ${ans}` };
       } else if (type === 1) {
-        // Square roots
         const ans = rng(2, 15);
         const sq = ans * ans;
         return { text: `√${sq} = ?`, answer: ans, type: 'mc',
           options: makeOptions(ans, () => ans + rng(-4,4)),
           explanation: `√${sq} = ${ans} because ${ans} × ${ans} = ${sq}` };
       } else {
-        // Complex BODMAS
         const a = rng(2,5), b = rng(1,4), c = rng(2,6), d = rng(1,5);
         const ans = a * b + c * d;
         return { text: `${a} × ${b} + ${c} × ${d} = ?`, answer: ans, type: 'mc',
@@ -1052,14 +1057,61 @@ function genNumbers(level) {
           explanation: `${a}×${b} = ${a*b} and ${c}×${d} = ${c*d}, so ${a*b} + ${c*d} = ${ans}` };
       }
     }
+    // ---- NEW LEVELS ----
+    case 6: {
+      // LCM and HCF
+      const type = rng(0,1);
+      const a = pick([4,6,8,9,10,12,15,18,20]);
+      const b = pick([6,8,9,10,12,14,15,16,18,20].filter(x=>x!==a));
+      if (type === 0) {
+        const ans = gcd(a,b);
+        return { text: `Find the HCF (GCD) of ${a} and ${b}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => pick([1,2,3,4,5,6,7,8,9,10].filter(x=>x!==ans))),
+          explanation: `Factors of ${a}: ${factorsOf(a).join(', ')}. Factors of ${b}: ${factorsOf(b).join(', ')}. HCF = ${ans}` };
+      } else {
+        const ans = lcm(a,b);
+        return { text: `Find the LCM of ${a} and ${b}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => pick([a*b, a*2, b*2, ans+rng(-10,10)].filter(x=>x!==ans&&x>0))),
+          explanation: `LCM(${a}, ${b}) = ${ans}` };
+      }
+    }
+    case 7: {
+      // Scientific notation (reading)
+      const coeff = pick([1.2, 2.5, 3.7, 4.1, 5.0, 6.3, 7.8, 8.4, 9.2]);
+      const exp = pick([2, 3, 4, 5, 6]);
+      const ans = coeff * Math.pow(10, exp);
+      return { text: `Write ${coeff} × 10<sup>${exp}</sup> as a normal number`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => coeff * Math.pow(10, exp + pick([-1,1,2]))),
+        explanation: `${coeff} × 10^${exp} = ${ans.toLocaleString()}` };
+    }
+    case 8: {
+      // Index rules: a^m × a^n = a^(m+n) etc.
+      const type = rng(0,1);
+      if (type === 0) {
+        const base = rng(2,5), m = rng(2,4), n = rng(2,4);
+        const ans = m + n;
+        return { text: `Simplify: ${base}<sup>${m}</sup> × ${base}<sup>${n}</sup> = ${base}<sup>?</sup>`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => pick([m*n, m-n+rng(0,2), ans+rng(-2,2)].filter(x=>x!==ans&&x>0))),
+          explanation: `When multiplying same base, add powers: ${m} + ${n} = ${ans}` };
+      } else {
+        const base = rng(2,5), m = rng(4,8), n = rng(1,m-1);
+        const ans = m - n;
+        return { text: `Simplify: ${base}<sup>${m}</sup> ÷ ${base}<sup>${n}</sup> = ${base}<sup>?</sup>`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => pick([m+n, m*n, ans+rng(-2,3)].filter(x=>x!==ans&&x>0))),
+          explanation: `When dividing same base, subtract powers: ${m} − ${n} = ${ans}` };
+      }
+    }
   }
 }
 
-// ====== ALGEBRA GENERATORS ======
+function factorsOf(n) { const f=[]; for(let i=1;i<=n;i++) if(n%i===0) f.push(i); return f; }
+
+// ============================================================
+// ALGEBRA GENERATOR  (levels 1-8)
+// ============================================================
 function genAlgebra(level) {
   switch(level) {
     case 1: {
-      // Evaluate expression
       const x = rng(1, 10);
       const a = rng(2, 8), b = rng(1, 15);
       const ans = a * x + b;
@@ -1068,7 +1120,6 @@ function genAlgebra(level) {
         explanation: `${a}(${x}) + ${b} = ${a*x} + ${b} = ${ans}` };
     }
     case 2: {
-      // Solve x + a = b or x - a = b
       const ans = rng(1, 20);
       const a = rng(1, 15);
       const type = rng(0,1);
@@ -1086,7 +1137,6 @@ function genAlgebra(level) {
       }
     }
     case 3: {
-      // ax + b = c
       const ans = rng(1, 12);
       const a = rng(2, 6), b = rng(1, 10);
       const c = a * ans + b;
@@ -1095,7 +1145,6 @@ function genAlgebra(level) {
         explanation: `${a}x = ${c} − ${b} = ${c-b}, so x = ${c-b} ÷ ${a} = ${ans}` };
     }
     case 4: {
-      // x on both sides: ax + b = cx + d
       const ans = rng(1, 10);
       const a = rng(3, 7), c = rng(1, a-1);
       const b = rng(1, 8), d = (a - c) * ans + b;
@@ -1104,7 +1153,6 @@ function genAlgebra(level) {
         explanation: `${a}x − ${c}x = ${d} − ${b} → ${a-c}x = ${d-b} → x = ${ans}` };
     }
     case 5: {
-      // Inequalities and harder equations
       const type = rng(0,1);
       if (type === 0) {
         const ans = rng(2, 10);
@@ -1114,7 +1162,6 @@ function genAlgebra(level) {
           options: makeOptions(ans, () => ans + rng(-5,5)),
           explanation: `${a}x = ${c} + ${b} = ${c+b}, so x = ${c+b}/${a} = ${ans}` };
       } else {
-        // Equation with brackets
         const ans = rng(1, 8);
         const a = rng(2, 4), b = rng(1, 5), c = a * (ans + b);
         return { text: `Solve: ${a}(x + ${b}) = ${c}`, answer: ans, type: 'mc',
@@ -1122,14 +1169,65 @@ function genAlgebra(level) {
           explanation: `x + ${b} = ${c}/${a} = ${c/a}, so x = ${c/a} − ${b} = ${ans}` };
       }
     }
+    // ---- NEW LEVELS ----
+    case 6: {
+      // Simple simultaneous equations (elimination, integer answers)
+      const x = rng(1,8), y = rng(1,8);
+      const a1 = rng(1,3), b1 = rng(1,3);
+      const a2 = rng(1,3), b2 = rng(1,3);
+      // Make sure they're not multiples of each other
+      if (a1*b2 === a2*b1) return genAlgebra(6); // retry
+      const c1 = a1*x + b1*y, c2 = a2*x + b2*y;
+      const ans = x;
+      return { text: `${a1}x + ${b1}y = ${c1} and ${a2}x + ${b2}y = ${c2}. Find x.`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => pick([y, ans+rng(-3,3), y+rng(-2,2)].filter(v=>v!==ans&&v>0))),
+        explanation: `Solving the system: x = ${x}, y = ${y}` };
+    }
+    case 7: {
+      // Sequences — find the nth term of arithmetic sequence
+      const first = rng(1, 10), diff = rng(2, 6);
+      const terms = [first, first+diff, first+2*diff, first+3*diff, first+4*diff];
+      const n = rng(8, 15);
+      const ans = first + (n - 1) * diff;
+      return { text: `Sequence: ${terms.join(', ')}, … Find the ${n}th term`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => ans + rng(-10,10)),
+        explanation: `Common difference = ${diff}. nth term = ${first} + (n−1)×${diff}. For n=${n}: ${first} + ${n-1}×${diff} = ${ans}` };
+    }
+    case 8: {
+      // Substitution into formulas (e.g. physics/engineering style)
+      const type = rng(0,2);
+      if (type === 0) {
+        // v = u + at
+        const u = rng(0,10), a = rng(1,5), t = rng(2,8);
+        const ans = u + a * t;
+        return { text: `v = u + at. Find v when u = ${u}, a = ${a}, t = ${t}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-10,10)),
+          explanation: `v = ${u} + ${a} × ${t} = ${u} + ${a*t} = ${ans}` };
+      } else if (type === 1) {
+        // A = πr²  (use 3.14)
+        const r = rng(2,8);
+        const ans = round2(3.14 * r * r);
+        return { text: `A = πr². Find A when r = ${r} (π ≈ 3.14)`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-15,15))),
+          explanation: `A = 3.14 × ${r}² = 3.14 × ${r*r} = ${ans}` };
+      } else {
+        // s = ½(a+b)h  (trapezoid)
+        const a = rng(3,10), b = rng(5,14), h = rng(2,8);
+        const ans = round2((a + b) * h / 2);
+        return { text: `s = ½(a+b)h. Find s when a=${a}, b=${b}, h=${h}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-12,12))),
+          explanation: `s = ½(${a}+${b})×${h} = ½×${a+b}×${h} = ${ans}` };
+      }
+    }
   }
 }
 
-// ====== RATIO GENERATORS ======
+// ============================================================
+// RATIOS GENERATOR  (levels 1-8)
+// ============================================================
 function genRatios(level) {
   switch(level) {
     case 1: {
-      // Simplify ratio
       const g = rng(2, 6);
       const a = rng(1, 8) * g, b = rng(1, 8) * g;
       const ga = a/gcd(a,b), gb = b/gcd(a,b);
@@ -1139,18 +1237,15 @@ function genRatios(level) {
         explanation: `GCD of ${a} and ${b} is ${gcd(a,b)}. So ${a}÷${gcd(a,b)} : ${b}÷${gcd(a,b)} = ${ans}` };
     }
     case 2: {
-      // Solve proportion: a/b = x/d or a/b = c/x  (like 12/x = 4/3)
       const type = rng(0,1);
       if (type === 0) {
         const a = rng(2,12), b = rng(2,8);
         const mult = rng(2,5);
         const c = a * mult, d = b * mult;
-        // Present as a/b = ?/d → answer is c
         return { text: `${fracHTML(a,b)} = ${fracHTML('?',d)}`, answer: c, type: 'mc',
           options: makeOptions(c, () => c + rng(-6,6)),
           explanation: `${a}/${b} = ?/${d}. Multiply ${a} by ${d/b} = ${d/b}: ? = ${c}` };
       } else {
-        // Like the example: 12/x = 4/3
         const c = rng(2,6), d = rng(2,6);
         const mult = rng(2,5);
         const a = c * mult, ans = d * mult;
@@ -1160,7 +1255,6 @@ function genRatios(level) {
       }
     }
     case 3: {
-      // Percentage of a number
       const pct = pick([10, 15, 20, 25, 30, 40, 50, 75]);
       const num = pick([40, 60, 80, 100, 120, 150, 200, 250, 300]);
       const ans = round2(pct * num / 100);
@@ -1169,7 +1263,6 @@ function genRatios(level) {
         explanation: `${pct}% of ${num} = ${pct}/100 × ${num} = ${ans}` };
     }
     case 4: {
-      // Percentage increase/decrease
       const type = rng(0,1);
       const original = pick([50, 60, 80, 100, 120, 150, 200, 250]);
       const pct = pick([10, 15, 20, 25, 30, 40, 50]);
@@ -1181,10 +1274,8 @@ function genRatios(level) {
         explanation: `${pct}% of ${original} = ${change}. ${original} ${type===0?'+':'−'} ${change} = ${ans}` };
     }
     case 5: {
-      // Reverse percentage or ratio word problem
       const type = rng(0,1);
       if (type === 0) {
-        // Reverse %: After 20% increase, price is X. What was original?
         const pct = pick([10, 20, 25, 50]);
         const original = pick([40, 50, 60, 80, 100, 120, 150, 200]);
         const newVal = round2(original * (1 + pct/100));
@@ -1193,7 +1284,6 @@ function genRatios(level) {
           options: makeOptions(ans, () => round2(ans + rng(-20,20))),
           explanation: `Original × ${1+pct/100} = ${newVal}. Original = ${newVal} ÷ ${1+pct/100} = ${ans}` };
       } else {
-        // Sharing in ratio
         const a = rng(1,5), b = rng(1,5);
         const total = (a+b) * rng(3,10);
         const shareA = total * a / (a+b);
@@ -1202,14 +1292,62 @@ function genRatios(level) {
           explanation: `Total parts = ${a+b}. Each part = ${total/(a+b)}. Shares: ${shareA} and ${total-shareA}. Larger = ${Math.max(shareA, total-shareA)}` };
       }
     }
+    // ---- NEW LEVELS ----
+    case 6: {
+      // Direct proportion word problem
+      const items = rng(3,6), cost = items * rng(2,8);
+      const priceEach = cost / items;
+      const want = rng(7, 15);
+      const ans = round2(want * priceEach);
+      return { text: `${items} notebooks cost $${cost}. How much do ${want} cost?`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans + rng(-10,10))),
+        explanation: `Price each = $${cost} ÷ ${items} = $${priceEach}. ${want} × $${priceEach} = $${ans}` };
+    }
+    case 7: {
+      // Simple interest / compound interest (1 year)
+      const principal = pick([100, 200, 500, 1000, 1500, 2000]);
+      const rate = pick([5, 8, 10, 12, 15]);
+      const years = pick([1, 2, 3]);
+      // Simple interest
+      const interest = round2(principal * rate * years / 100);
+      const ans = round2(principal + interest);
+      return { text: `$${principal} at ${rate}% simple interest for ${years} year${years>1?'s':''}. What is the total?`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans + rng(-50,50))),
+        explanation: `Interest = ${principal} × ${rate}/100 × ${years} = $${interest}. Total = $${principal} + $${interest} = $${ans}` };
+    }
+    case 8: {
+      // Exchange rates and unit pricing
+      const type = rng(0,1);
+      if (type === 0) {
+        const rate = pick([1.2, 0.85, 4.0, 3.5, 1.5, 0.75]);
+        const from = pick([10, 20, 50, 100, 200, 250]);
+        const ans = round2(from * rate);
+        const curr1 = pick(['USD', 'EUR', 'GBP']);
+        const curr2 = pick(['PLN', 'SAR', 'JPY', 'CHF'].filter(c=>c!==curr1));
+        return { text: `Convert ${from} ${curr1} to ${curr2} at rate 1 ${curr1} = ${rate} ${curr2}`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-20,20))),
+          explanation: `${from} × ${rate} = ${ans} ${curr2}` };
+      } else {
+        // Unit pricing
+        const wA = pick([250, 300, 400, 500]), pA = round2(wA * rng(1,3) / 100);
+        const wB = pick([150, 200, 350, 600, 750]), pB = round2(wB * rng(1,3) / 100);
+        const ppgA = round2(pA / wA * 100);
+        const ppgB = round2(pB / wB * 100);
+        const cheaper = ppgA < ppgB ? 'A' : 'B';
+        return { text: `Pack A: ${wA}g for $${pA}. Pack B: ${wB}g for $${pB}. Which is better value?`, answer: cheaper, type: 'mc',
+          options: shuffle(['A', 'B', 'Same', 'Need more info']),
+          explanation: `Price per 100g → A: $${ppgA}, B: $${ppgB}. Pack ${cheaper} is better value.` };
+      }
+    }
   }
 }
 
-// ====== GEOMETRY GENERATORS ======
+// ============================================================
+// GEOMETRY GENERATOR  (levels 1-8)
+// ============================================================
 function genGeometry(level) {
   switch(level) {
     case 1: {
-      // Perimeter of rectangle
       const l = rng(3, 15), w = rng(2, 12);
       const ans = 2 * (l + w);
       return { text: `Perimeter of a rectangle: length = ${l} cm, width = ${w} cm`, answer: ans, type: 'mc',
@@ -1217,7 +1355,6 @@ function genGeometry(level) {
         explanation: `P = 2(l + w) = 2(${l} + ${w}) = 2 × ${l+w} = ${ans} cm` };
     }
     case 2: {
-      // Area of rectangle or triangle
       const type = rng(0,1);
       if (type === 0) {
         const l = rng(3, 15), w = rng(2, 12);
@@ -1234,11 +1371,9 @@ function genGeometry(level) {
       }
     }
     case 3: {
-      // Area of circle or parallelogram
       const type = rng(0,1);
       if (type === 0) {
         const r = rng(2, 10);
-        const ans = round2(Math.PI * r * r);
         return { text: `Area of a circle with radius ${r} cm (use π ≈ 3.14)`, answer: round2(3.14*r*r), type: 'mc',
           options: makeOptions(round2(3.14*r*r), () => round2(3.14*r*r + rng(-20,20))),
           explanation: `A = πr² = 3.14 × ${r}² = 3.14 × ${r*r} = ${round2(3.14*r*r)} cm²` };
@@ -1251,7 +1386,6 @@ function genGeometry(level) {
       }
     }
     case 4: {
-      // Volume of rectangular prism or trapezoid area
       const type = rng(0,1);
       if (type === 0) {
         const l = rng(2,10), w = rng(2,8), h = rng(2,8);
@@ -1268,7 +1402,6 @@ function genGeometry(level) {
       }
     }
     case 5: {
-      // Surface area or circumference + composite
       const type = rng(0,2);
       if (type === 0) {
         const l = rng(2,8), w = rng(2,6), h = rng(2,6);
@@ -1277,14 +1410,12 @@ function genGeometry(level) {
           options: makeOptions(ans, () => rng(0,1) ? l*w*h : ans + rng(-30,30)),
           explanation: `SA = 2(lw + lh + wh) = 2(${l*w} + ${l*h} + ${w*h}) = 2 × ${l*w+l*h+w*h} = ${ans} cm²` };
       } else if (type === 1) {
-        // Circumference
         const r = rng(2, 12);
         const ans = round2(2 * 3.14 * r);
         return { text: `Circumference of a circle, radius = ${r} cm (π ≈ 3.14)`, answer: ans, type: 'mc',
           options: makeOptions(ans, () => round2(ans + rng(-10,10))),
           explanation: `C = 2πr = 2 × 3.14 × ${r} = ${ans} cm` };
       } else {
-        // Angle problem
         const a = rng(20, 80);
         const b = rng(20, 160 - a);
         const ans = 180 - a - b;
@@ -1293,18 +1424,77 @@ function genGeometry(level) {
           explanation: `Angles in a triangle sum to 180°. ${a} + ${b} + ? = 180 → ? = ${ans}°` };
       }
     }
+    // ---- NEW LEVELS ----
+    case 6: {
+      // Pythagorean theorem
+      const triples = [[3,4,5],[5,12,13],[6,8,10],[8,15,17],[9,12,15]];
+      const [a,b,c] = pick(triples);
+      const type = rng(0,1);
+      if (type === 0) {
+        return { text: `Right triangle: legs ${a} cm and ${b} cm. Find the hypotenuse.`, answer: c, type: 'mc',
+          options: makeOptions(c, () => c + rng(-4,4)),
+          explanation: `c² = a² + b² = ${a*a} + ${b*b} = ${c*c}. c = √${c*c} = ${c} cm` };
+      } else {
+        return { text: `Right triangle: hypotenuse ${c} cm, one leg ${a} cm. Find the other leg.`, answer: b, type: 'mc',
+          options: makeOptions(b, () => b + rng(-4,4)),
+          explanation: `b² = c² − a² = ${c*c} − ${a*a} = ${b*b}. b = √${b*b} = ${b} cm` };
+      }
+    }
+    case 7: {
+      // Coordinate geometry — midpoint or distance (integer-friendly)
+      const type = rng(0,1);
+      if (type === 0) {
+        // Midpoint (ensure even sums)
+        const x1 = rng(-6,6)*2, y1 = rng(-6,6)*2;
+        const x2 = rng(-6,6)*2, y2 = rng(-6,6)*2;
+        const mx = (x1+x2)/2, my = (y1+y2)/2;
+        const ans = `(${mx}, ${my})`;
+        return { text: `Midpoint of (${x1}, ${y1}) and (${x2}, ${y2})?`, answer: ans, type: 'mc',
+          options: shuffle([ans, `(${mx+1}, ${my-1})`, `(${x1+x2}, ${y1+y2})`, `(${mx-1}, ${my+1})`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+          explanation: `Midpoint = ((${x1}+${x2})/2, (${y1}+${y2})/2) = (${mx}, ${my})` };
+      } else {
+        // Distance on a grid (3-4-5 or similar)
+        const triples = [[3,4,5],[6,8,10],[5,12,13]];
+        const [dx,dy,d] = pick(triples);
+        const x1 = rng(-4,4), y1 = rng(-4,4);
+        return { text: `Distance from (${x1}, ${y1}) to (${x1+dx}, ${y1+dy})?`, answer: d, type: 'mc',
+          options: makeOptions(d, () => d + rng(-3,3)),
+          explanation: `d = √(${dx}² + ${dy}²) = √(${dx*dx} + ${dy*dy}) = √${d*d} = ${d}` };
+      }
+    }
+    case 8: {
+      // Reflection / rotation coordinates
+      const x = rng(1,8), y = rng(1,8);
+      const type = rng(0,2);
+      if (type === 0) {
+        const ans = `(${-x}, ${y})`;
+        return { text: `Reflect (${x}, ${y}) in the y-axis. New coordinates?`, answer: ans, type: 'mc',
+          options: shuffle([ans, `(${x}, ${-y})`, `(${-x}, ${-y})`, `(${y}, ${x})`]),
+          explanation: `Reflecting in y-axis: (x,y) → (−x,y) = (${-x}, ${y})` };
+      } else if (type === 1) {
+        const ans = `(${x}, ${-y})`;
+        return { text: `Reflect (${x}, ${y}) in the x-axis. New coordinates?`, answer: ans, type: 'mc',
+          options: shuffle([ans, `(${-x}, ${y})`, `(${-x}, ${-y})`, `(${y}, ${x})`]),
+          explanation: `Reflecting in x-axis: (x,y) → (x,−y) = (${x}, ${-y})` };
+      } else {
+        const ans = `(${-x}, ${-y})`;
+        return { text: `Rotate (${x}, ${y}) by 180° about the origin. New coordinates?`, answer: ans, type: 'mc',
+          options: shuffle([ans, `(${-x}, ${y})`, `(${x}, ${-y})`, `(${y}, ${-x})`]),
+          explanation: `180° rotation: (x,y) → (−x,−y) = (${-x}, ${-y})` };
+      }
+    }
   }
 }
 
-// ====== STATISTICS GENERATORS ======
+// ============================================================
+// STATISTICS GENERATOR  (levels 1-8)
+// ============================================================
 function genStatistics(level) {
   switch(level) {
     case 1: {
-      // Mean
       const n = rng(4, 6);
       const nums = Array.from({length: n}, () => rng(2, 20));
       const sum = nums.reduce((a,b) => a+b, 0);
-      // Make sure mean is clean
       const extra = n - (sum % n);
       if (sum % n !== 0) nums[0] += (extra === n ? 0 : extra);
       const finalSum = nums.reduce((a,b) => a+b, 0);
@@ -1314,7 +1504,6 @@ function genStatistics(level) {
         explanation: `Sum = ${finalSum}, Count = ${n}. Mean = ${finalSum} ÷ ${n} = ${ans}` };
     }
     case 2: {
-      // Median
       const n = pick([5, 7, 9]);
       const nums = Array.from({length: n}, () => rng(1, 30)).sort((a,b) => a-b);
       const ans = nums[Math.floor(n/2)];
@@ -1323,7 +1512,6 @@ function genStatistics(level) {
         explanation: `Sorted: ${nums.join(', ')}. Middle value (position ${Math.floor(n/2)+1}) = ${ans}` };
     }
     case 3: {
-      // Mode and Range
       const type = rng(0,1);
       if (type === 0) {
         const mode = rng(3, 15);
@@ -1340,7 +1528,6 @@ function genStatistics(level) {
       }
     }
     case 4: {
-      // Mean from frequency table
       const values = [rng(1,5), rng(6,10), rng(11,15)];
       const freqs = [rng(2,6), rng(3,7), rng(2,5)];
       const totalF = freqs.reduce((a,b)=>a+b,0);
@@ -1352,7 +1539,6 @@ function genStatistics(level) {
         explanation: `Σfx = ${values.map((v,i)=>`${v}×${freqs[i]}`).join(' + ')} = ${totalFX}. Σf = ${totalF}. Mean = ${totalFX}/${totalF} = ${ans}` };
     }
     case 5: {
-      // Probability
       const type = rng(0,1);
       if (type === 0) {
         const total = pick([6, 8, 10, 12, 20]);
@@ -1363,10 +1549,8 @@ function genStatistics(level) {
           options: shuffle([ans, `${favorable}/${total}`, `${total-favorable}/${total}`, `${favorable+1}/${total}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
           explanation: `P(red) = favorable/total = ${favorable}/${total}${sn!==favorable||sd!==total ? ` = ${ans}` : ''}` };
       } else {
-        // Two-step probability
         const r = rng(2,5), b = rng(2,5);
         const total = r + b;
-        const pRed = `${r}/${total}`;
         const [sn,sd] = simplify(r, total);
         const ans = sd===1 ? `${sn}` : `${sn}/${sd}`;
         return { text: `A bag has ${r} red and ${b} blue marbles. What is the probability of picking red?`, answer: ans, type: 'mc',
@@ -1374,13 +1558,261 @@ function genStatistics(level) {
           explanation: `P(red) = ${r}/${total}${sn!==r||sd!==total ? ` = ${ans}` : ''}` };
       }
     }
+    // ---- NEW LEVELS ----
+    case 6: {
+      // Pie chart calculations
+      const type = rng(0,1);
+      if (type === 0) {
+        // Given fraction, find angle
+        const den = pick([4, 5, 8, 10]);
+        const num = rng(1, den - 1);
+        const ans = round2(360 * num / den);
+        return { text: `${num}/${den} of students chose football. What angle on a pie chart?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-30,30))),
+          explanation: `Angle = ${num}/${den} × 360° = ${ans}°` };
+      } else {
+        // Given angle, find percentage
+        const angle = pick([36, 45, 72, 90, 120, 144, 180]);
+        const ans = round2(angle / 360 * 100);
+        return { text: `A pie chart sector is ${angle}°. What percentage is that?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-10,10))),
+          explanation: `Percentage = ${angle}/360 × 100 = ${ans}%` };
+      }
+    }
+    case 7: {
+      // Combined events: AND/OR probability (simple)
+      const type = rng(0,1);
+      if (type === 0) {
+        // Dice: P(even AND greater than 3)
+        const ans = `1/3`;
+        return { text: `Rolling a fair die, what is P(even AND > 3)? Possible: 4 and 6`, answer: ans, type: 'mc',
+          options: shuffle(['1/6', '1/3', '1/2', '2/3']),
+          explanation: `Even AND > 3: {4, 6}. That's 2 out of 6 = 2/6 = 1/3` };
+      } else {
+        // Two coins
+        const ans = `1/4`;
+        return { text: `Flip two fair coins. What is P(both heads)?`, answer: ans, type: 'mc',
+          options: shuffle(['1/4', '1/2', '1/3', '3/4']),
+          explanation: `P(H) × P(H) = 1/2 × 1/2 = 1/4` };
+      }
+    }
+    case 8: {
+      // Comparing datasets / interpreting stats
+      const meanA = rng(50,80), meanB = rng(50,80);
+      const rangeA = rng(10,40), rangeB = rng(10,40);
+      const type = rng(0,1);
+      if (type === 0) {
+        const diff = Math.abs(meanA - meanB);
+        const higher = meanA > meanB ? 'A' : 'B';
+        return { text: `Class A: mean ${meanA}, range ${rangeA}. Class B: mean ${meanB}, range ${rangeB}. Which class scored higher on average?`,
+          answer: higher, type: 'mc',
+          options: shuffle(['A', 'B', 'Same', 'Cannot tell']),
+          explanation: `Mean A = ${meanA}, Mean B = ${meanB}. Class ${higher} scored higher on average (by ${diff}).` };
+      } else {
+        const more = rangeA > rangeB ? 'A' : 'B';
+        return { text: `Class A: mean ${meanA}, range ${rangeA}. Class B: mean ${meanB}, range ${rangeB}. Which class had more consistent scores?`,
+          answer: rangeA < rangeB ? 'A' : 'B', type: 'mc',
+          options: shuffle(['A', 'B', 'Same', 'Cannot tell']),
+          explanation: `Smaller range = more consistent. Range A = ${rangeA}, Range B = ${rangeB}. Class ${rangeA<rangeB?'A':'B'} is more consistent.` };
+      }
+    }
   }
 }
 
-// ====== CHALLENGE MIX ======
+// ============================================================
+// ENGINEERING GENERATOR  (levels 1-8) — NEW REALM
+// ============================================================
+function genEngineering(level) {
+  switch(level) {
+    case 1: {
+      // Unit conversions: length
+      const conversions = [
+        { from: 'cm', to: 'mm', factor: 10 },
+        { from: 'm', to: 'cm', factor: 100 },
+        { from: 'km', to: 'm', factor: 1000 },
+        { from: 'mm', to: 'cm', factor: 0.1 },
+        { from: 'cm', to: 'm', factor: 0.01 },
+        { from: 'm', to: 'km', factor: 0.001 },
+      ];
+      const conv = pick(conversions);
+      const val = conv.factor >= 1 ? rng(2, 20) : rng(100, 5000);
+      const ans = round2(val * conv.factor);
+      return { text: `Convert ${val} ${conv.from} to ${conv.to}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans * pick([10, 0.1, 100, 0.01]))),
+        explanation: `${val} ${conv.from} × ${conv.factor} = ${ans} ${conv.to}` };
+    }
+    case 2: {
+      // Unit conversions: mass and volume
+      const conversions = [
+        { from: 'kg', to: 'g', factor: 1000, val: () => rng(1,15) },
+        { from: 'g', to: 'kg', factor: 0.001, val: () => pick([500,750,1500,2000,2500,3000,4500]) },
+        { from: 'l', to: 'ml', factor: 1000, val: () => rng(1,10) },
+        { from: 'ml', to: 'l', factor: 0.001, val: () => pick([250,500,750,1500,2000,3500]) },
+      ];
+      const conv = pick(conversions);
+      const val = conv.val();
+      const ans = round2(val * conv.factor);
+      return { text: `Convert ${val} ${conv.from} to ${conv.to}`, answer: ans, type: 'mc',
+        options: makeOptions(ans, () => round2(ans * pick([10, 0.1, 0.01]))),
+        explanation: `${val} ${conv.from} × ${conv.factor} = ${ans} ${conv.to}` };
+    }
+    case 3: {
+      // Speed = distance / time
+      const type = rng(0,2);
+      if (type === 0) {
+        const d = rng(10, 200), t = pick([1,2,4,5,10]);
+        const ans = round2(d / t);
+        return { text: `A car travels ${d} km in ${t} hour${t>1?'s':''}. What is its speed?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-15,15))),
+          explanation: `Speed = distance ÷ time = ${d} ÷ ${t} = ${ans} km/h` };
+      } else if (type === 1) {
+        const s = pick([30,40,50,60,80,100]), t = pick([2,3,4,5]);
+        const ans = s * t;
+        return { text: `Speed = ${s} km/h, time = ${t} hours. Find the distance.`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-30,30)),
+          explanation: `Distance = speed × time = ${s} × ${t} = ${ans} km` };
+      } else {
+        const s = pick([20,30,40,50,60,80]), d = s * rng(2,5);
+        const ans = round2(d / s);
+        return { text: `A bus covers ${d} km at ${s} km/h. How many hours?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-2,3))),
+          explanation: `Time = distance ÷ speed = ${d} ÷ ${s} = ${ans} hours` };
+      }
+    }
+    case 4: {
+      // Density = mass / volume
+      const type = rng(0,2);
+      if (type === 0) {
+        const m = rng(10,100), v = pick([2,4,5,8,10,20,25]);
+        const ans = round2(m / v);
+        return { text: `Mass = ${m} g, Volume = ${v} cm³. Find the density.`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-3,3))),
+          explanation: `Density = mass ÷ volume = ${m} ÷ ${v} = ${ans} g/cm³` };
+      } else if (type === 1) {
+        const d = pick([2,3,5,7,8,10]), v = rng(3,15);
+        const ans = d * v;
+        return { text: `Density = ${d} g/cm³, Volume = ${v} cm³. Find the mass.`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-10,10)),
+          explanation: `Mass = density × volume = ${d} × ${v} = ${ans} g` };
+      } else {
+        const d = pick([2,3,4,5,8,10]), m = d * rng(3,12);
+        const ans = round2(m / d);
+        return { text: `A block has mass ${m} g and density ${d} g/cm³. What is its volume?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-4,4))),
+          explanation: `Volume = mass ÷ density = ${m} ÷ ${d} = ${ans} cm³` };
+      }
+    }
+    case 5: {
+      // Gear ratios
+      const type = rng(0,1);
+      if (type === 0) {
+        const teethA = pick([10,12,15,20,24,30]);
+        const teethB = pick([20,24,30,36,40,48,60].filter(t => t !== teethA && t > teethA));
+        const rpmA = pick([60, 100, 120, 150, 180, 200, 240, 300]);
+        const ans = round2(rpmA * teethA / teethB);
+        return { text: `Gear A (${teethA} teeth, ${rpmA} rpm) drives Gear B (${teethB} teeth). Find B's rpm.`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-20,20))),
+          explanation: `rpm_B = rpm_A × teeth_A / teeth_B = ${rpmA} × ${teethA}/${teethB} = ${ans} rpm` };
+      } else {
+        const teethA = pick([12,15,20,24]), teethB = pick([36,40,48,60]);
+        const ratio = `${teethA/gcd(teethA,teethB)}:${teethB/gcd(teethA,teethB)}`;
+        return { text: `Gear A has ${teethA} teeth, Gear B has ${teethB} teeth. Simplify the gear ratio A:B.`, answer: ratio, type: 'mc',
+          options: shuffle([ratio, `${teethA}:${teethB}`, `${teethB/gcd(teethA,teethB)}:${teethA/gcd(teethA,teethB)}`, `1:${Math.round(teethB/teethA)}`].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4)),
+          explanation: `${teethA}:${teethB} simplified by GCD ${gcd(teethA,teethB)} = ${ratio}` };
+      }
+    }
+    case 6: {
+      // Scale drawings and maps
+      const type = rng(0,1);
+      if (type === 0) {
+        // Map scale
+        const scale = pick([100, 200, 500, 1000, 2000, 5000]); // 1 cm = scale m
+        const mapDist = rng(2, 15);
+        const ans = mapDist * scale;
+        const unit = scale >= 1000 ? 'km' : 'm';
+        const ansDisplay = scale >= 1000 ? round2(ans / 1000) : ans;
+        return { text: `Map scale: 1 cm = ${scale >= 1000 ? scale/1000 + ' km' : scale + ' m'}. If the map distance is ${mapDist} cm, what is the real distance?`, answer: ansDisplay, type: 'mc',
+          options: makeOptions(ansDisplay, () => round2(ansDisplay + rng(-5,5) * (scale >= 1000 ? 1 : 100))),
+          explanation: `Real distance = ${mapDist} × ${scale >= 1000 ? scale/1000 : scale} = ${ansDisplay} ${unit}` };
+      } else {
+        // Scale model
+        const scaleFactor = pick([10, 20, 25, 50, 100]);
+        const realSize = scaleFactor * rng(2, 10);
+        const ans = round2(realSize / scaleFactor);
+        return { text: `A building is ${realSize} m tall. A 1:${scaleFactor} model would be how many ${scaleFactor >= 100 ? 'cm' : 'm'} tall?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-3,3))),
+          explanation: `Model = real ÷ scale = ${realSize} ÷ ${scaleFactor} = ${ans} ${scaleFactor >= 100 ? 'cm' : 'm'}` };
+      }
+    }
+    case 7: {
+      // Levers and moments: Force × Distance
+      const type = rng(0,1);
+      if (type === 0) {
+        // Balance: F1 × d1 = F2 × d2, find F2
+        const f1 = rng(5, 30), d1 = rng(2, 8);
+        const d2 = rng(2, 8);
+        const ans = round2(f1 * d1 / d2);
+        if (!Number.isInteger(ans)) return genEngineering(7); // keep it clean
+        return { text: `A lever balances with ${f1} N at ${d1} m from pivot. What force at ${d2} m balances it?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => round2(ans + rng(-8,8))),
+          explanation: `F₁ × d₁ = F₂ × d₂ → ${f1} × ${d1} = F₂ × ${d2} → F₂ = ${f1*d1}/${d2} = ${ans} N` };
+      } else {
+        // Calculate moment
+        const f = rng(5, 40), d = rng(1, 8);
+        const ans = f * d;
+        return { text: `A force of ${f} N acts ${d} m from a pivot. What is the moment?`, answer: ans, type: 'mc',
+          options: makeOptions(ans, () => ans + rng(-10,10)),
+          explanation: `Moment = Force × Distance = ${f} × ${d} = ${ans} Nm` };
+      }
+    }
+    case 8: {
+      // Simple circuits: V = I × R  and  Efficiency
+      const type = rng(0,1);
+      if (type === 0) {
+        // Ohm's law
+        const subtype = rng(0,2);
+        if (subtype === 0) {
+          const i = pick([0.5, 1, 1.5, 2, 2.5, 3, 4, 5]);
+          const r = pick([2, 4, 5, 6, 8, 10, 12, 20]);
+          const ans = round2(i * r);
+          return { text: `Current = ${i} A, Resistance = ${r} Ω. Find the voltage (V = IR).`, answer: ans, type: 'mc',
+            options: makeOptions(ans, () => round2(ans + rng(-6,6))),
+            explanation: `V = I × R = ${i} × ${r} = ${ans} V` };
+        } else if (subtype === 1) {
+          const v = pick([6, 9, 12, 24, 48]);
+          const r = pick([2, 3, 4, 6, 8, 12]);
+          const ans = round2(v / r);
+          return { text: `Voltage = ${v} V, Resistance = ${r} Ω. Find the current.`, answer: ans, type: 'mc',
+            options: makeOptions(ans, () => round2(ans + rng(-2,2))),
+            explanation: `I = V ÷ R = ${v} ÷ ${r} = ${ans} A` };
+        } else {
+          const r1 = rng(2,10), r2 = rng(2,10);
+          const ans = r1 + r2;
+          return { text: `Two resistors in series: ${r1} Ω and ${r2} Ω. Total resistance?`, answer: ans, type: 'mc',
+            options: makeOptions(ans, () => ans + rng(-5,5)),
+            explanation: `Series: R_total = R₁ + R₂ = ${r1} + ${r2} = ${ans} Ω` };
+        }
+      } else {
+        // Efficiency
+        const useful = rng(20, 90);
+        const total = useful + rng(10, 60);
+        const ans = round2(useful / total * 100);
+        // Round to 1 decimal
+        const ansRounded = Math.round(ans * 10) / 10;
+        return { text: `A machine does ${useful} J of useful work from ${total} J input. What is its efficiency (%)?`, answer: ansRounded, type: 'mc',
+          options: makeOptions(ansRounded, () => round2(ansRounded + rng(-15,15))),
+          explanation: `Efficiency = useful/total × 100 = ${useful}/${total} × 100 = ${ansRounded}%` };
+      }
+    }
+  }
+}
+
+// ============================================================
+// CHALLENGE MIX  (levels 1-5 → mapped to difficulty 3-7)
+// ============================================================
 function genChallenge(level) {
-  const effectiveLevel = Math.min(level + 2, 5); // Challenge starts at difficulty 3+
-  const gen = pick([genNumbers, genAlgebra, genRatios, genGeometry, genStatistics]);
+  const effectiveLevel = Math.min(level + 2, 8);
+  const gen = pick([genNumbers, genAlgebra, genRatios, genGeometry, genStatistics, genEngineering]);
   return gen(effectiveLevel);
 }
 
@@ -1392,6 +1824,7 @@ function generateQuestion(category, level) {
     case 'ratios': return genRatios(level);
     case 'geometry': return genGeometry(level);
     case 'statistics': return genStatistics(level);
+    case 'engineering': return genEngineering(level);
     case 'challenge': return genChallenge(level);
     default: return genNumbers(level);
   }
@@ -1410,7 +1843,6 @@ function startLevel(catId, level) {
   state.bestStreak = 0;
   state.answered = false;
 
-  // Generate questions
   for (let i = 0; i < QUESTIONS_PER_SESSION; i++) {
     state.questions.push(generateQuestion(catId, level));
   }
@@ -1481,7 +1913,6 @@ function checkAnswer(selected, btnEl, grid) {
   const q = state.questions[state.currentQ];
   const correct = selected === fmt(q.answer) || selected === q.answer.toString();
 
-  // Highlight buttons
   grid.querySelectorAll('.option-btn').forEach(b => {
     if (b.innerHTML === fmt(q.answer) || b.innerHTML === q.answer.toString()) {
       b.classList.add('correct');
@@ -1521,7 +1952,6 @@ function processAnswer(correct, q) {
     feedback.textContent = pick(['Correct! ✨', 'Nailed it! 🎯', 'Perfect! 🌟', 'Excellent! 💫', 'You got it! 🔥']);
     feedback.className = 'feedback-text correct';
 
-    // Streak popup
     if (state.streak >= 3) {
       showStreakPopup(state.streak);
     }
@@ -1532,7 +1962,6 @@ function processAnswer(correct, q) {
     feedback.className = 'feedback-text wrong';
   }
 
-  // Show explanation
   if (q.explanation) {
     explBox.innerHTML = `💡 ${q.explanation}`;
     explBox.className = 'explanation-box visible';
@@ -1571,24 +2000,20 @@ function endSession() {
   const sec = elapsed % 60;
   const timeStr = `${min}:${sec.toString().padStart(2,'0')}`;
 
-  // Record progress
   const key = `${state.currentCategory}-${state.currentLevel}`;
   const prev = state.progress[key] || {};
-  if (state.score >= 7) { // Need 7/10 to pass
+  if (state.score >= 7) {
     state.progress[key] = { completed: true, bestScore: Math.max(state.score, prev.bestScore || 0) };
   } else {
     state.progress[key] = { completed: prev.completed || false, bestScore: Math.max(state.score, prev.bestScore || 0) };
   }
 
-  // Add XP
   const xpEarned = state.score * 5 + state.bestStreak * 3 + (state.score >= 10 ? 20 : 0);
   addXP(xpEarned);
   saveProgress();
 
-  // Stars
   const stars = state.score >= 10 ? '⭐⭐⭐' : state.score >= 8 ? '⭐⭐' : state.score >= 7 ? '⭐' : '💪';
 
-  // Messages
   const msgs = {
     10: 'PERFECT SCORE! You are a Math Legend! 🏆',
     9: 'Outstanding! Nearly perfect! 🌟',
@@ -1606,9 +2031,7 @@ function endSession() {
   document.getElementById('stat-time').textContent = timeStr;
   document.getElementById('stat-streak').textContent = state.bestStreak;
 
-  // Generate QR code
   generateQR(timeStr, elapsed);
-
   showScreen('screen-complete');
 }
 
@@ -1622,7 +2045,6 @@ function simpleHash(str) {
     hash = ((hash << 5) - hash) + c;
     hash |= 0;
   }
-  // Mix with salt
   const saltHash = SALT.split('').reduce((h, c) => ((h << 5) - h) + c.charCodeAt(0), 0);
   return Math.abs(hash ^ saltHash).toString(36).slice(0, 8);
 }
@@ -1670,7 +2092,6 @@ function generateQR(timeStr, elapsedSec) {
       correctLevel: QRCode.CorrectLevel.M
     });
   } else {
-    // Fallback if QR library didn't load
     const p = document.createElement('p');
     p.style.cssText = 'font-family:monospace; font-size:0.7rem; word-break:break-all; color:#333; max-width:300px; padding:8px;';
     p.textContent = qrData;
@@ -1761,7 +2182,6 @@ window.onload = () => {
     document.getElementById('player-name').value = state.playerName;
   }
 
-  // Check for verification mode via URL params
   const params = new URLSearchParams(window.location.search);
   if (params.has('verify')) {
     document.getElementById('verify-input').value = params.get('verify');
